@@ -27,9 +27,9 @@ class Polynomial:
     def get_polynomial(self, multiplier_x, module_prime):
         polynomial_result = 0
 
-        for power_of_x, character in enumerate(self.coefficients):
+        for power_of_x, cooef in enumerate(self.coefficients):
             polynomial_result = ((polynomial_result % module_prime) +
-                                 (character*(self.fast_power(multiplier_x, power_of_x, module_prime))) % module_prime) % module_prime
+                                 (cooef * (self.fast_power(multiplier_x, power_of_x, module_prime))) % module_prime) % module_prime
 
         return polynomial_result
 
@@ -42,4 +42,3 @@ MODULE_PRIME = int(input("Enter a prime number\n"))
 polynomial = Polynomial([111, 108, 108, 101, 104])
 polynomial.solve(42098, MODULE_PRIME)
 polynomial.solve(30098, MODULE_PRIME)
-
