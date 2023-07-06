@@ -63,7 +63,7 @@ class Parse_data:
         return self.weather_reading
 
 
-class Weather_report_Calculation:
+class Weather_report_calculation:
     def __init__(self) -> None:
         self.max_temperature = {'temperature': float(
             '-inf'), 'day': '', 'month': ''}
@@ -73,6 +73,10 @@ class Weather_report_Calculation:
 
         self.max_humidity = {'humidity': float(
             '-inf'), 'day': '', 'month': ''}
+
+        self.mean_humidities = []
+        self.max_temperatures = []
+        self.min_temperatures = []
 
     def tofind_max_temperature(self, temperature, day, month):
 
@@ -132,11 +136,59 @@ class Weather_report_Calculation:
                 self.tofind_max_humidity(max_humidity_str, day, month)
 
         print(
-            f'Max Temperature: {self.max_temperature["temperature"]}C (Day: {self.max_temperature["day"]}, Month: {self.max_temperature["month"]})')
+            f'Max Temperature: {self.max_temperature["temperature"]}°C (Day: {self.max_temperature["day"]}, Month: {self.max_temperature["month"]})')
         print(
-            f'Min Temperature: {self.min_temperature["temperature"]}C (Day: {self.min_temperature["day"]}, Month: {self.min_temperature["month"]})')
+            f'Min Temperature: {self.min_temperature["temperature"]}°C (Day: {self.min_temperature["day"]}, Month: {self.min_temperature["month"]})')
         print(
             f'Max Humidity: {self.max_humidity["humidity"]}% (Day: {self.max_humidity["day"]}, Month: {self.max_humidity["month"]})')
+
+    def tofind_max_temperature_average(self, max_temperature_str):
+        if max_temperature_str:
+            try:
+                self.max_temperatures.append(float(max_temperature_str))
+            except ValueError:
+                pass
+        if len(self.max_temperatures):
+            return sum(self.max_temperatures)/len(self.max_temperatures)
+
+    def tofind_min_temperature_average(self, min_temperature_str):
+        if min_temperature_str:
+            try:
+                self.min_temperatures.append(float(min_temperature_str))
+            except ValueError:
+                pass
+        if len(self.min_temperatures):
+            return sum(self.min_temperatures)/len(self.min_temperatures)
+
+    def tofind_mean_humidities_average(self, mean_humidity_str):
+        if mean_humidity_str:
+            try:
+                self.mean_humidities.append(float(mean_humidity_str))
+            except ValueError:
+                pass
+        if len(self.mean_humidities):
+            return sum(self.mean_humidities)/len(self.mean_humidities)
+
+    def monthly_report(self, year, month, weatherData):
+
+        for daily in (weatherData.get(year, {}).get(month, [])):
+
+            max_temperature_str = daily.get('max_temperature', float("-inf"))
+
+            max_temperature_average = self.tofind_max_temperature_average(
+                max_temperature_str)
+
+            min_temperature_str = daily.get('min_temperature', float("inf"))
+            min_temperature_average = self.tofind_min_temperature_average(
+                min_temperature_str)
+
+            mean_humidity_str = daily.get('mean_humidity', float("-inf"))
+            mean_humidity_average = self.tofind_mean_humidities_average(
+                mean_humidity_str)
+
+        print(f'Highest Temperature Average: {max_temperature_average}°C')
+        print(f'Lowest Temperature Average: {min_temperature_average}°C')
+        print(f'Mean Humidity Average: {mean_humidity_average}%')
 
 
 # Folder path
@@ -146,6 +198,7 @@ weather_data = Parse_data()
 parsed_data = weather_data.parse_weather_data(folder_path)
 
 # # Now Calculating the result's
-cal = Weather_report_Calculation()
+cal = Weather_report_calculation()
 
-cal.yearly_report('2005', parsed_data)
+# cal.yearly_report('2005', parsed_data)
+cal.monthly_report('2005', '6', parsed_data)
