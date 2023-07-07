@@ -1,8 +1,18 @@
 
 class Polynomial:
 
-    def __init__(self, c):
-        self.coefficients = c
+    def __init__(self, coefficients):
+        if isinstance(coefficients, str):
+            self.coefficients = self.ascii_from_string(coefficients)
+        else:
+            self.coefficients = coefficients
+
+    def ascii_from_string(input_string):
+        ascii_list = []
+        for char in input_string:
+            ascii_list.append(ord(char))
+        return ascii_list
+
 
     def extract_coefficients(self, polynomial_string):
         for character in reversed(polynomial_string):
@@ -42,3 +52,4 @@ MODULE_PRIME = int(input("Enter a prime number\n"))
 polynomial = Polynomial([111, 108, 108, 101, 104])
 polynomial.solve(42098, MODULE_PRIME)
 polynomial.solve(30098, MODULE_PRIME)
+
