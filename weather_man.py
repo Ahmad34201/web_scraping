@@ -1,10 +1,13 @@
 
 import os
 from collections import defaultdict
-from colorama import Fore
 import csv
-import sys
+import argparse
 
+# ANSI escape sequences for colors
+CYAN = "\033[36m"
+GREEN = "\033[32m"
+RED = "\033[31m"
 
 # class Parse_data
 class Parse_data:
@@ -89,7 +92,7 @@ class Weather_report_calculation:
         if temperature:
             temperature = float(temperature)
             if self.max_temperature['temperature'] != max(self.max_temperature['temperature'], temperature):
-                self.max_temperature['day'] = day
+                self.max_temperature['day'] = day + 1
                 self.max_temperature['month'] = month
 
             self.max_temperature['temperature'] = max(
@@ -101,7 +104,7 @@ class Weather_report_calculation:
 
             temperature = float(temperature)
             if self.min_temperature['temperature'] != min(self.min_temperature['temperature'], temperature):
-                self.min_temperature['day'] = day
+                self.min_temperature['day'] = day + 1
                 self.min_temperature['month'] = month
 
             self.min_temperature['temperature'] = min(
@@ -113,7 +116,7 @@ class Weather_report_calculation:
 
             humidity = float(humidity)
             if self.max_humidity['humidity'] != max(self.max_humidity['humidity'], humidity):
-                self.max_humidity['day'] = day
+                self.max_humidity['day'] = day + 1
                 self.max_humidity['month'] = month
 
             self.max_humidity['humidity'] = max(
@@ -200,7 +203,7 @@ class Weather_report_calculation:
                     'max_temperature', float("-inf"))
                 if max_temperature_str:
                     print(
-                        f"\n{Fore.CYAN} {day}  {Fore.RED }  { '+' * int(max_temperature_str)}   {Fore.CYAN}{float(max_temperature_str)}°C")
+                        f"\n{CYAN} {day + 1}  {RED }  { '+' * int(max_temperature_str)}   {CYAN}{float(max_temperature_str)}°C")
                 else:
                     pass
 
@@ -208,7 +211,7 @@ class Weather_report_calculation:
                     'min_temperature', float("inf"))
                 if min_temperature_str:
                     print(
-                        f"{Fore.CYAN} {day}  {Fore.GREEN }  { '+' * int(min_temperature_str)}  {Fore.CYAN} {float(min_temperature_str)}°C\n")
+                        f"{CYAN} {day + 1}  {GREEN }  { '+' * int(min_temperature_str)}  {CYAN} {float(min_temperature_str)}°C\n")
                 else:
                     pass
         else:
@@ -224,10 +227,10 @@ class Weather_report_calculation:
                     'min_temperature', float("inf"))
 
                 if max_temperature_str and min_temperature_str:
-                    print(f"\n{Fore.CYAN} {day} "
-                          f"{Fore.GREEN} {'+' * int(min_temperature_str)}"
-                          f"{Fore.RED} {'+' * int(max_temperature_str)} "
-                          f"{Fore.CYAN} {float(min_temperature_str)}°C - {Fore.CYAN}{float(max_temperature_str)}°C")
+                    print(f"\n{CYAN} {day + 1} "
+                          f"{GREEN} {'+' * int(min_temperature_str)}"
+                          f"{RED} {'+' * int(max_temperature_str)} "
+                          f"{CYAN} {float(min_temperature_str)}°C - {CYAN}{float(max_temperature_str)}°C")
 
                 else:
                     pass
@@ -245,44 +248,60 @@ def main():
     # Now Calculating the results
     cal = Weather_report_calculation()
 
-    # Check if -c flag is present and get its value
-    if "-c" in sys.argv:
-        try:
-            index = sys.argv.index("-c")
-            c_value = sys.argv[index + 1]
-            year, month = c_value.split('/')
-            cal.horizontal_bar_charts(year, month, parsed_data)
-        except IndexError:
-            print("No value provided after -c flag")
 
-    # Check if -a flag is present and get its value
-    if "-a" in sys.argv:
-        try:
-            index = sys.argv.index("-a")
-            a_value = sys.argv[index + 1]
-            year, month = a_value.split('/')
-            cal.monthly_report(year, month, parsed_data)
-        except IndexError:
-            print("No value provided after -a flag")
+    # Create an ArgumentParser object
+    parser = argparse.ArgumentParser(description="Weather Report Program")
 
-    # Check if -e flag is present and get its value
-    if "-e" in sys.argv:
-        try:
-            index = sys.argv.index("-e")
-            year = sys.argv[index + 1]
-            cal.yearly_report(year, parsed_data)
-        except IndexError:
-            print("No value provided after -e flag")
+    # Add argument for -c flag
+    parser.add_argument("-c", metavar="YEAR/MONTH", help="Generate horizontal bar charts for a specific year and month")
 
-    # Check if -b flag is present and get its value
-    if "-b" in sys.argv:
-        try:
-            index = sys.argv.index("-b")
-            b_value = sys.argv[index + 1]
-            year, month = b_value.split('/')
-            cal.bounus(year, month, parsed_data)
-        except IndexError:
-            print("No value provided after -b flag")
+    # Add argument for -a flag
+    parser.add_argument("-a", metavar="YEAR/MONTH", help="Generate monthly report for a specific year and month")
+
+    # Add argument for -e flag
+    parser.add_argument("-e", metavar="YEAR", help="Generate yearly report for a specific year")
+
+    # Add argument for -b flag
+    parser.add_argument("-b", metavar="YEAR/MONTH", help="Generate bonus report for a specific year and month")
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
+    # Process the -c flag
+    if args.c:
+        year, month = args.c.split('/')
+        # Perform validation on year and month
+        if not year.isdigit() or not month.isdigit() or int(year) < 0 or int(month) < 1 or int(month) > 12:
+            print("Invalid YEAR/MONTH format or values")
+            return
+        cal.horizontal_bar_charts(year, month, parsed_data)
+
+    # Process the -a flag
+    if args.a:
+        year, month = args.a.split('/')
+        # Perform validation on year and month
+        if not year.isdigit() or not month.isdigit() or int(year) < 0 or int(month) < 1 or int(month) > 12:
+            print("Invalid YEAR/MONTH format or values")
+            return
+        cal.monthly_report(year, month, parsed_data)
+
+    # Process the -e flag
+    if args.e:
+        year = args.e
+        # Perform validation on year
+        if not year.isdigit() or int(year) < 0:
+            print("Invalid YEAR value")
+            return
+        cal.yearly_report(year, parsed_data)
+
+    # Process the -b flag
+    if args.b:
+        year, month = args.b.split('/')
+        # Perform validation on year and month
+        if not year.isdigit() or not month.isdigit() or int(year) < 0 or int(month) < 1 or int(month) > 12:
+            print("Invalid YEAR/MONTH format or values")
+            return
+        cal.bounus(year, month, parsed_data)
 
 
 if __name__ == "__main__":
