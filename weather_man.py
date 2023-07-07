@@ -1,7 +1,9 @@
 
 import os
 from collections import defaultdict
-from colorama import Fore, Back, Style
+from colorama import Fore
+import csv
+import sys
 
 
 # class Parse_data
@@ -47,9 +49,11 @@ class Parse_data:
                 with open(file_path, 'r') as file:
                     # Skip the header line
                     next(file)
+
+                    line = next(file)
                     monthly_data = []
-                    # Purpose for to get year and month
-                    data = next(file).split(',')
+                    # Split the line using CSV reader
+                    data = list(csv.reader([line]))[0]
                     year, month, day = data[0].split('-')
                     monthly_data.append(self.parse_daily_data(data))
 
@@ -80,62 +84,52 @@ class Weather_report_calculation:
         self.max_temperatures = []
         self.min_temperatures = []
 
-    def tofind_max_temperature(self, temperature, day, month):
+    def get_max_temperature(self, temperature, day, month):
 
         if temperature:
-            try:
-                temperature = float(temperature)
-                if self.max_temperature['temperature'] != max(self.max_temperature['temperature'], temperature):
-                    self.max_temperature['day'] = day
-                    self.max_temperature['month'] = month
+            temperature = float(temperature)
+            if self.max_temperature['temperature'] != max(self.max_temperature['temperature'], temperature):
+                self.max_temperature['day'] = day
+                self.max_temperature['month'] = month
 
-                self.max_temperature['temperature'] = max(
-                    self.max_temperature['temperature'], temperature)
+            self.max_temperature['temperature'] = max(
+                self.max_temperature['temperature'], temperature)
 
-            except ValueError:
-                pass
-
-    def tofind_min_temperature(self, temperature, day, month):
+    def get_min_temperature(self, temperature, day, month):
 
         if temperature:
-            try:
-                temperature = float(temperature)
-                if self.min_temperature['temperature'] != min(self.min_temperature['temperature'], temperature):
-                    self.min_temperature['day'] = day
-                    self.min_temperature['month'] = month
 
-                self.min_temperature['temperature'] = min(
-                    self.min_temperature['temperature'], temperature)
+            temperature = float(temperature)
+            if self.min_temperature['temperature'] != min(self.min_temperature['temperature'], temperature):
+                self.min_temperature['day'] = day
+                self.min_temperature['month'] = month
 
-            except ValueError:
-                pass
+            self.min_temperature['temperature'] = min(
+                self.min_temperature['temperature'], temperature)
 
-    def tofind_max_humidity(self, humidity, day, month):
+    def get_max_humidity(self, humidity, day, month):
 
         if humidity:
-            try:
-                humidity = float(humidity)
-                if self.max_humidity['humidity'] != max(self.max_humidity['humidity'], humidity):
-                    self.max_humidity['day'] = day
-                    self.max_humidity['month'] = month
 
-                self.max_humidity['humidity'] = max(
-                    self.max_humidity['humidity'], humidity)
+            humidity = float(humidity)
+            if self.max_humidity['humidity'] != max(self.max_humidity['humidity'], humidity):
+                self.max_humidity['day'] = day
+                self.max_humidity['month'] = month
 
-            except ValueError:
-                pass
+            self.max_humidity['humidity'] = max(
+                self.max_humidity['humidity'], humidity)
 
     def yearly_report(self, year, weather_data):
         for month in weather_data.get(year, {}):
             for day, daily in enumerate(weather_data.get(year, {}).get(month, [])):
                 max_temperature_str = daily.get(
                     'max_temperature', float("-inf"))
-                self.tofind_max_temperature(max_temperature_str, day, month)
+                self.get_max_temperature(max_temperature_str, day, month)
                 min_temperature_str = daily.get(
                     'min_temperature', float("inf"))
-                self.tofind_min_temperature(min_temperature_str, day, month)
+                self.get_min_temperature(min_temperature_str, day, month)
                 max_humidity_str = daily.get('max_humidity', float("-inf"))
-                self.tofind_max_humidity(max_humidity_str, day, month)
+                self.get_max_humidity(max_humidity_str, day, month)
 
         print(f'\nYearly Report for {year} .....\n')
         print(
@@ -145,30 +139,24 @@ class Weather_report_calculation:
         print(
             f'Max Humidity: {self.max_humidity["humidity"]}% (Day: {self.max_humidity["day"]}, Month: {self.max_humidity["month"]})')
 
-    def tofind_max_temperature_average(self, max_temperature_str):
+    def get_max_temperature_average(self, max_temperature_str):
         if max_temperature_str:
-            try:
-                self.max_temperatures.append(float(max_temperature_str))
-            except ValueError:
-                pass
+            self.max_temperatures.append(float(max_temperature_str))
+
         if len(self.max_temperatures):
             return sum(self.max_temperatures)/len(self.max_temperatures)
 
-    def tofind_min_temperature_average(self, min_temperature_str):
+    def get_min_temperature_average(self, min_temperature_str):
         if min_temperature_str:
-            try:
-                self.min_temperatures.append(float(min_temperature_str))
-            except ValueError:
-                pass
+            self.min_temperatures.append(float(min_temperature_str))
+
         if len(self.min_temperatures):
             return sum(self.min_temperatures)/len(self.min_temperatures)
 
-    def tofind_mean_humidities_average(self, mean_humidity_str):
+    def get_mean_humidities_average(self, mean_humidity_str):
         if mean_humidity_str:
-            try:
-                self.mean_humidities.append(float(mean_humidity_str))
-            except ValueError:
-                pass
+            self.mean_humidities.append(float(mean_humidity_str))
+
         if len(self.mean_humidities):
             return sum(self.mean_humidities)/len(self.mean_humidities)
 
@@ -183,16 +171,16 @@ class Weather_report_calculation:
                 max_temperature_str = daily.get(
                     'max_temperature', float("-inf"))
 
-                max_temperature_average = self.tofind_max_temperature_average(
+                max_temperature_average = self.get_max_temperature_average(
                     max_temperature_str)
 
                 min_temperature_str = daily.get(
                     'min_temperature', float("inf"))
-                min_temperature_average = self.tofind_min_temperature_average(
+                min_temperature_average = self.get_min_temperature_average(
                     min_temperature_str)
 
                 mean_humidity_str = daily.get('mean_humidity', float("-inf"))
-                mean_humidity_average = self.tofind_mean_humidities_average(
+                mean_humidity_average = self.get_mean_humidities_average(
                     mean_humidity_str)
 
             print(f'\nMonthly Report for {month}/{year} .....\n')
@@ -257,43 +245,44 @@ def main():
     # Now Calculating the results
     cal = Weather_report_calculation()
 
-    while True:
-        print(Fore.WHITE + "Please choose an option:")
-        print("1. Yearly report")
-        print("2. Monthly report")
-        print("3. Horizontal bar charts")
-        print("4. Generate multile reports")
-        print("5. Horizontal bar charts on single line")
-        print("6. Quit")
-
-        choice = input("Enter your choice (1-6): ")
-
-        if choice == "1":
-            year = input("Enter the year: ")
-            cal.yearly_report(year, parsed_data)
-        elif choice == "2":
-            year = input("Enter the year: ")
-            month = input("Enter the month (1-12): ")
-            cal.monthly_report(year, month, parsed_data)
-        elif choice == "3":
-            year = input("Enter the year: ")
-            month = input("Enter the month (1-12): ")
+    # Check if -c flag is present and get its value
+    if "-c" in sys.argv:
+        try:
+            index = sys.argv.index("-c")
+            c_value = sys.argv[index + 1]
+            year, month = c_value.split('/')
             cal.horizontal_bar_charts(year, month, parsed_data)
-        elif choice == "4":
-            year = input("Enter the year: ")
-            month = input("Enter the month (1-12): ")
-            cal.yearly_report(year, parsed_data)
+        except IndexError:
+            print("No value provided after -c flag")
+
+    # Check if -a flag is present and get its value
+    if "-a" in sys.argv:
+        try:
+            index = sys.argv.index("-a")
+            a_value = sys.argv[index + 1]
+            year, month = a_value.split('/')
             cal.monthly_report(year, month, parsed_data)
-            cal.horizontal_bar_charts(year, month, parsed_data)
-        elif choice == "5":
-            year = input("Enter the year: ")
-            month = input("Enter the month (1-12): ")
+        except IndexError:
+            print("No value provided after -a flag")
+
+    # Check if -e flag is present and get its value
+    if "-e" in sys.argv:
+        try:
+            index = sys.argv.index("-e")
+            year = sys.argv[index + 1]
+            cal.yearly_report(year, parsed_data)
+        except IndexError:
+            print("No value provided after -e flag")
+
+    # Check if -b flag is present and get its value
+    if "-b" in sys.argv:
+        try:
+            index = sys.argv.index("-b")
+            b_value = sys.argv[index + 1]
+            year, month = b_value.split('/')
             cal.bounus(year, month, parsed_data)
-        elif choice == "6":
-            print("Exiting...")
-            break
-        else:
-            print("Invalid choice. Please try again.")
+        except IndexError:
+            print("No value provided after -b flag")
 
 
 if __name__ == "__main__":
