@@ -7,7 +7,7 @@ class Polynomial:
         else:
             self.coefficients = coefficients
 
-    def ascii_from_string(input_string):
+    def ascii_from_string(self, input_string):
         ascii_list = []
         for char in input_string:
             ascii_list.append(ord(char))
