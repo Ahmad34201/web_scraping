@@ -6,9 +6,7 @@ class Polynomial:
 
     @classmethod
     def ascii_from_string(cls, input_string):
-        ascii_list = []
-        for char in input_string:
-            ascii_list.append(ord(char))
+        ascii_list = [ord(char) for char in input_string]
         return cls(ascii_list)
 
 
@@ -48,7 +46,7 @@ class Polynomial:
 
 MODULE_PRIME = int(input("Enter a prime number\n"))
 # polynomial = Polynomial([104, 101, 108, 108, 111])
-polynomial = Polynomial.ascii_from_string('hello')
+polynomial = Polynomial.ascii_from_string('sir')
 polynomial.solve(42098, MODULE_PRIME)
 polynomial.solve(30098, MODULE_PRIME)
 
