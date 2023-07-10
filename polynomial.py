@@ -2,13 +2,12 @@
 class Polynomial:
 
     def __init__(self, coefficients):
-            self.coefficients = coefficients
+        self.coefficients = coefficients
 
     @classmethod
     def ascii_from_string(cls, input_string):
         ascii_list = [ord(char) for char in input_string]
         return cls(ascii_list)
-
 
     def extract_coefficients(self, polynomial_string):
         for character in reversed(polynomial_string):
@@ -34,8 +33,10 @@ class Polynomial:
         polynomial_result = 0
 
         for power_of_x, cooef in enumerate(self.coefficients):
-            polynomial_result = ((polynomial_result % module_prime) +
-                                 (cooef * (self.fast_power(multiplier_x, power_of_x, module_prime))) % module_prime) % module_prime
+            power_value = self.fast_power(
+                multiplier_x, power_of_x, module_prime)
+            polynomial_result = (((polynomial_result % module_prime) +
+                                 (cooef * power_value)) % module_prime) % module_prime
 
         return polynomial_result
 
@@ -49,4 +50,3 @@ MODULE_PRIME = int(input("Enter a prime number\n"))
 polynomial = Polynomial.ascii_from_string('sir')
 polynomial.solve(42098, MODULE_PRIME)
 polynomial.solve(30098, MODULE_PRIME)
-
