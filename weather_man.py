@@ -127,17 +127,20 @@ class Weather_report_calculation:
     def yearly_report(self, year, weather_data):
         for month in weather_data.get(year, {}):
             for day, daily in enumerate(weather_data.get(year, {}).get(month, [])):
-                if daily is None:
-                    continue
 
                 max_temperature_str = daily.get(
                     'max_temperature', float("-inf"))
-                self.get_max_temperature(max_temperature_str, day, month)
+                if max_temperature_str:
+                    self.get_max_temperature(max_temperature_str, day, month)
                 min_temperature_str = daily.get(
                     'min_temperature', float("inf"))
-                self.get_min_temperature(min_temperature_str, day, month)
+
+                if min_temperature_str:
+                    self.get_min_temperature(min_temperature_str, day, month)
                 max_humidity_str = daily.get('max_humidity', float("-inf"))
-                self.get_max_humidity(max_humidity_str, day, month)
+
+                if max_humidity_str:
+                    self.get_max_humidity(max_humidity_str, day, month)
 
         print(f'\nYearly Report for {year} .....\n')
         print(
@@ -205,18 +208,17 @@ class Weather_report_calculation:
         if weather_data[year]:
             for day, daily in enumerate(weather_data.get(year, {}).get(month, [])):
 
-                if daily is None:
-                    continue
                 max_temperature_str = daily.get(
                     'max_temperature', float("-inf"))
+                min_temperature_str = daily.get(
+                    'min_temperature', float("inf"))
+
                 if max_temperature_str:
                     print(
                         f"\n{CYAN} {day + 1}  {RED }  { '+' * int(max_temperature_str)}   {CYAN}{float(max_temperature_str)}°C")
                 else:
                     pass
 
-                min_temperature_str = daily.get(
-                    'min_temperature', float("inf"))
                 if min_temperature_str:
                     print(
                         f"{CYAN} {day + 1}  {GREEN }  { '+' * int(min_temperature_str)}  {CYAN} {float(min_temperature_str)}°C\n")
@@ -229,8 +231,6 @@ class Weather_report_calculation:
         print("\nHorizontal Bar Reports for highest and lowest temperatures in single line.. \n")
         if weather_data[year]:
             for day, daily in enumerate(weather_data.get(year, {}).get(month, [])):
-                if daily is None:
-                    continue
                 max_temperature_str = daily.get(
                     'max_temperature', float("-inf"))
                 min_temperature_str = daily.get(
@@ -241,7 +241,14 @@ class Weather_report_calculation:
                           f"{GREEN} {'+' * int(min_temperature_str)}"
                           f"{RED} {'+' * int(max_temperature_str)} "
                           f"{CYAN} {float(min_temperature_str)}°C - {CYAN}{float(max_temperature_str)}°C")
-
+                elif max_temperature_str:
+                    print(f"\n{CYAN} {day + 1} "
+                          f"{RED} {'+' * int(max_temperature_str)} "
+                          f"{CYAN}{float(max_temperature_str)}°C")
+                elif min_temperature_str:
+                    print(f"\n{CYAN} {day + 1} "
+                          f"{RED} {'+' * int(min_temperature_str)} "
+                          f"{CYAN}{float(min_temperature_str)}°C")
                 else:
                     pass
         else:
