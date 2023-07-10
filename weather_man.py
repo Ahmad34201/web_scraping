@@ -10,6 +10,8 @@ GREEN = "\033[32m"
 RED = "\033[31m"
 
 # class Parse_data
+
+
 class Parse_data:
     def __init__(self):
         self.weather_reading = defaultdict(lambda: defaultdict(dict))
@@ -125,6 +127,9 @@ class Weather_report_calculation:
     def yearly_report(self, year, weather_data):
         for month in weather_data.get(year, {}):
             for day, daily in enumerate(weather_data.get(year, {}).get(month, [])):
+                if daily is None:
+                    continue
+
                 max_temperature_str = daily.get(
                     'max_temperature', float("-inf"))
                 self.get_max_temperature(max_temperature_str, day, month)
@@ -199,6 +204,9 @@ class Weather_report_calculation:
         print("\nHorizontal Bar Reports for highest and lowest temperatures in multiple lines.. \n")
         if weather_data[year]:
             for day, daily in enumerate(weather_data.get(year, {}).get(month, [])):
+
+                if daily is None:
+                    continue
                 max_temperature_str = daily.get(
                     'max_temperature', float("-inf"))
                 if max_temperature_str:
@@ -221,6 +229,8 @@ class Weather_report_calculation:
         print("\nHorizontal Bar Reports for highest and lowest temperatures in single line.. \n")
         if weather_data[year]:
             for day, daily in enumerate(weather_data.get(year, {}).get(month, [])):
+                if daily is None:
+                    continue
                 max_temperature_str = daily.get(
                     'max_temperature', float("-inf"))
                 min_temperature_str = daily.get(
@@ -248,21 +258,24 @@ def main():
     # Now Calculating the results
     cal = Weather_report_calculation()
 
-
     # Create an ArgumentParser object
     parser = argparse.ArgumentParser(description="Weather Report Program")
 
     # Add argument for -c flag
-    parser.add_argument("-c", metavar="YEAR/MONTH", help="Generate horizontal bar charts for a specific year and month")
+    parser.add_argument("-c", metavar="YEAR/MONTH",
+                        help="Generate horizontal bar charts for a specific year and month")
 
     # Add argument for -a flag
-    parser.add_argument("-a", metavar="YEAR/MONTH", help="Generate monthly report for a specific year and month")
+    parser.add_argument("-a", metavar="YEAR/MONTH",
+                        help="Generate monthly report for a specific year and month")
 
     # Add argument for -e flag
-    parser.add_argument("-e", metavar="YEAR", help="Generate yearly report for a specific year")
+    parser.add_argument("-e", metavar="YEAR",
+                        help="Generate yearly report for a specific year")
 
     # Add argument for -b flag
-    parser.add_argument("-b", metavar="YEAR/MONTH", help="Generate bonus report for a specific year and month")
+    parser.add_argument("-b", metavar="YEAR/MONTH",
+                        help="Generate bonus report for a specific year and month")
 
     # Parse the command-line arguments
     args = parser.parse_args()
