@@ -16,64 +16,47 @@ class Parse_data:
     def __init__(self):
         self.weather_reading = defaultdict(lambda: defaultdict(dict))
 
-    def parse_daily_data(self, data):
-        daywise_data = {
-            'date': data[0],
-            'max_temperature': data[1],
-            'mean_temperature': data[2],
-            'min_temperature': data[3],
-            'dew_point': data[4],
-            'mean_dew_point': data[5],
-            'min_dew_point': data[6],
-            'max_humidity': data[7],
-            'mean_humidity': data[8],
-            'min_humidity': data[9],
-            'max_sea_level_pressure': data[10],
-            'mean_sea_level_pressure': data[11],
-            'min_sea_level_pressure': data[12],
-            'max_visibility': data[13],
-            'mean_visibility': data[14],
-            'min_visibility': data[15],
-            'max_wind_speed': data[16],
-            'mean_wind_speed': data[17],
-            'max_gust_speed': data[18],
-            'precipitation': data[19],
-            'cloud_cover': data[20],
-            'events': data[21],
-            'wind_direction_degrees': data[22]
-        }
-        return daywise_data
-
     def parse_weather_data(self, folder_path):
-
         for filename in os.listdir(folder_path):
             # Filter files with a specific extension, e.g., .txt
             if filename.endswith(".txt"):
                 file_path = os.path.join(folder_path, filename)
 
                 with open(file_path, 'r') as file:
+                    reader = csv.DictReader(file, delimiter=',')
+
                     # Skip the header line
-                    next(file)
+                    next(reader)
 
-                    line = next(file)
                     monthly_data = []
-                    # Split the line using CSV reader
-                    data = list(csv.reader([line]))[0]
-                    year, month, day = data[0].split('-')
-                    monthly_data.append(self.parse_daily_data(data))
+                    year, month = None, None
 
-                    for line in file:
-                        line = line.strip()
-                        if line:
-                            data = line.split(',')
-                            # Create a dictionary and store the data
-                            monthly_data.append(self.parse_daily_data(data))
+                    for row in reader:
 
-            self.weather_reading[year][month] = monthly_data
+                        # Check if the row is blank
+                        if not any(row.values()):
+                            continue
+
+                        # Retrieve the 'date' value from the row using 'get()' with two possible key names
+                        date_value = row.get('PKST') or row.get('PKT')
+
+                        if not year or not month:
+                            if date_value:
+                                # Extract year and month from the first row
+                                date_parts = date_value.split('-')
+                                year, month = date_parts[0], date_parts[1]
+
+                        # Store the row dictionary in monthly_data
+                        monthly_data.append(row)
+
+                if year and month:
+                    self.weather_reading[year][month] = monthly_data
+
         return self.weather_reading
 
-
 # Class for calculations for reports
+
+
 class Weather_report_calculation:
     def __init__(self) -> None:
         self.max_temperature = {'temperature': float(
@@ -129,14 +112,15 @@ class Weather_report_calculation:
             for day, daily in enumerate(weather_data.get(year, {}).get(month, [])):
 
                 max_temperature_str = daily.get(
-                    'max_temperature', float("-inf"))
+                    'Max TemperatureC', float("-inf"))
+
                 self.get_max_temperature(max_temperature_str, day, month)
-                
+
                 min_temperature_str = daily.get(
-                    'min_temperature', float("inf"))
+                    'Min TemperatureC', float("inf"))
                 self.get_min_temperature(min_temperature_str, day, month)
 
-                max_humidity_str = daily.get('max_humidity', float("-inf"))
+                max_humidity_str = daily.get('Max Humidity', float("-inf"))
                 self.get_max_humidity(max_humidity_str, day, month)
 
         print(f'\nYearly Report for {year} .....\n')
@@ -177,17 +161,17 @@ class Weather_report_calculation:
             for daily in (weather_data.get(year, {}).get(month, [])):
 
                 max_temperature_str = daily.get(
-                    'max_temperature', float("-inf"))
+                    'Max TemperatureC', float("-inf"))
 
                 max_temperature_average = self.get_max_temperature_average(
                     max_temperature_str)
 
                 min_temperature_str = daily.get(
-                    'min_temperature', float("inf"))
+                    'Min TemperatureC', float("inf"))
                 min_temperature_average = self.get_min_temperature_average(
                     min_temperature_str)
 
-                mean_humidity_str = daily.get('mean_humidity', float("-inf"))
+                mean_humidity_str = daily.get('Mean Humidity', float("-inf"))
                 mean_humidity_average = self.get_mean_humidities_average(
                     mean_humidity_str)
 
@@ -206,9 +190,9 @@ class Weather_report_calculation:
             for day, daily in enumerate(weather_data.get(year, {}).get(month, [])):
 
                 max_temperature_str = daily.get(
-                    'max_temperature', float("-inf"))
+                    'Max TemperatureC', float("-inf"))
                 min_temperature_str = daily.get(
-                    'min_temperature', float("inf"))
+                    'Min TemperatureC', float("inf"))
 
                 if max_temperature_str:
                     print(
@@ -229,9 +213,9 @@ class Weather_report_calculation:
         if weather_data[year]:
             for day, daily in enumerate(weather_data.get(year, {}).get(month, [])):
                 max_temperature_str = daily.get(
-                    'max_temperature', float("-inf"))
+                    'Max TemperatureC', float("-inf"))
                 min_temperature_str = daily.get(
-                    'min_temperature', float("inf"))
+                    'Min TemperatureC', float("inf"))
 
                 if max_temperature_str and min_temperature_str:
                     print(f"\n{CYAN} {day + 1} "
