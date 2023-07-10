@@ -130,17 +130,14 @@ class Weather_report_calculation:
 
                 max_temperature_str = daily.get(
                     'max_temperature', float("-inf"))
-                if max_temperature_str:
-                    self.get_max_temperature(max_temperature_str, day, month)
+                self.get_max_temperature(max_temperature_str, day, month)
+                
                 min_temperature_str = daily.get(
                     'min_temperature', float("inf"))
+                self.get_min_temperature(min_temperature_str, day, month)
 
-                if min_temperature_str:
-                    self.get_min_temperature(min_temperature_str, day, month)
                 max_humidity_str = daily.get('max_humidity', float("-inf"))
-
-                if max_humidity_str:
-                    self.get_max_humidity(max_humidity_str, day, month)
+                self.get_max_humidity(max_humidity_str, day, month)
 
         print(f'\nYearly Report for {year} .....\n')
         print(
