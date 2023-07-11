@@ -226,6 +226,7 @@ class Weather_report_calculation:
     def bounus(self, year, month, weather_data):
         print("\nHorizontal Bar Reports for highest and lowest temperatures in single line.. \n")
         if weather_data[year]:
+            print("Inn ")
             for day, daily in enumerate(weather_data.get(year, {}).get(month, [])):
                 max_temperature_str = daily.get(
                     'Max TemperatureC', float("-inf"))
@@ -243,15 +244,6 @@ class Weather_report_calculation:
         else:
             print("\nSorry, Don't have data  for this year..  \n")
 
-def validate_year(year):
-    if not year.isdigit() or int(year) < 0:
-        return False
-    return True
-
-def validate_month(month):
-    if not month.isdigit() or int(month) < 1 or int(month) > 12:
-        return False
-    return True
 
 def main():
     # Folder path
@@ -263,23 +255,42 @@ def main():
     # Now Calculating the results
     cal = Weather_report_calculation()
 
+    # Custom type function for year and month validation
+    def validate_year_month(value):
+        if value is None:
+            raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
+        try:
+            year, month = value.split('/')
+            year = int(year)
+            month = int(month)
+            if year < 0 or month < 1 or month > 12:
+                raise argparse.ArgumentTypeError(
+                    "Invalid YEAR/MONTH format or values")
+            return str(year), str(month)
+        except ValueError:
+            raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
+
     # Create an ArgumentParser object
     parser = argparse.ArgumentParser(description="Weather Report Program")
 
     # Add argument for -c flag
     parser.add_argument("-c", metavar="YEAR/MONTH",
+                        type=validate_year_month,
                         help="Generate horizontal bar charts for a specific year and month")
 
     # Add argument for -a flag
     parser.add_argument("-a", metavar="YEAR/MONTH",
+                        type=validate_year_month,
                         help="Generate monthly report for a specific year and month")
 
     # Add argument for -e flag
     parser.add_argument("-e", metavar="YEAR",
+                        type=int,
                         help="Generate yearly report for a specific year")
 
     # Add argument for -b flag
     parser.add_argument("-b", metavar="YEAR/MONTH",
+                        type=validate_year_month,
                         help="Generate bonus report for a specific year and month")
 
     # Parse the command-line arguments
@@ -287,40 +298,22 @@ def main():
 
     # Process the -c flag
     if args.c:
-        year, month = args.c.split('/')
-        print(year)
-        print(month)
-        # Perform validation on year and month
-        if not validate_year(year) or not validate_month(month):
-            print("Invalid YEAR/MONTH format or values")
-            return
+        year, month = args.c
         cal.horizontal_bar_charts(year, month, parsed_data)
 
     # Process the -a flag
     if args.a:
-        year, month = args.a.split('/')
-        # Perform validation on year and month
-        if not validate_year(year) and not validate_month(month):
-            print("Invalid YEAR/MONTH format or values")
-            return
+        year, month = args.a
         cal.monthly_report(year, month, parsed_data)
 
     # Process the -e flag
     if args.e:
         year = args.e
-        # Perform validation on year
-        if not validate_year(year):
-            print("Invalid YEAR value")
-            return
         cal.yearly_report(year, parsed_data)
 
     # Process the -b flag
     if args.b:
-        year, month = args.b.split('/')
-        # Perform validation on year and month
-        if not validate_year(year) and not validate_month(month):
-            print("Invalid YEAR/MONTH format or values")
-            return
+        year, month = args.b
         cal.bounus(year, month, parsed_data)
 
 
