@@ -35,8 +35,9 @@ class Polynomial:
         for power_of_x, cooef in enumerate(self.coefficients):
             power_value = self.fast_power(
                 multiplier_x, power_of_x, module_prime)
+            term = (cooef * power_value)
             polynomial_result = (((polynomial_result % module_prime) +
-                                 (cooef * power_value)) % module_prime) % module_prime
+                                 term) % module_prime) % module_prime
 
         return polynomial_result
 
