@@ -8,8 +8,21 @@ import argparse
 CYAN = "\033[36m"
 GREEN = "\033[32m"
 RED = "\033[31m"
+END_COLOR = "\033[0m"
 
 # class Parse_data
+
+
+def print_cyan(text):
+    print(f"{CYAN}{text}{END_COLOR}",  end="")
+
+
+def print_green(text):
+    print(f"{GREEN} {text}{END_COLOR}",  end="")
+
+
+def print_red(text):
+    print(f"{RED} {text}{END_COLOR}",  end="")
 
 
 class Parse_data:
@@ -195,14 +208,16 @@ class Weather_report_calculation:
                     'Min TemperatureC', float("inf"))
 
                 if max_temperature_str:
-                    print(
-                        f"\n{CYAN} {day + 1}  {RED }  { '+' * int(max_temperature_str)}   {CYAN}{float(max_temperature_str)}°C")
+                    print_cyan(day + 1)
+                    print_red('+' * int(max_temperature_str))
+                    print_cyan(f"{float(max_temperature_str)}°C \n")
                 else:
                     pass
 
                 if min_temperature_str:
-                    print(
-                        f"{CYAN} {day + 1}  {GREEN }  { '+' * int(min_temperature_str)}  {CYAN} {float(min_temperature_str)}°C\n")
+                    print_cyan(day + 1)
+                    print_green('+' * int(min_temperature_str))
+                    print_cyan(f"{float(min_temperature_str)}°C\n")
                 else:
                     pass
         else:
@@ -218,23 +233,25 @@ class Weather_report_calculation:
                     'Min TemperatureC', float("inf"))
 
                 if max_temperature_str and min_temperature_str:
-                    print(f"\n{CYAN} {day + 1} "
-                          f"{GREEN} {'+' * int(min_temperature_str)}"
-                          f"{RED} {'+' * int(max_temperature_str)} "
-                          f"{CYAN} {float(min_temperature_str)}°C - {CYAN}{float(max_temperature_str)}°C")
-                elif max_temperature_str:
-                    print(f"\n{CYAN} {day + 1} "
-                          f"{RED} {'+' * int(max_temperature_str)} "
-                          f"{CYAN}{float(max_temperature_str)}°C")
-                elif min_temperature_str:
-                    print(f"\n{CYAN} {day + 1} "
-                          f"{RED} {'+' * int(min_temperature_str)} "
-                          f"{CYAN}{float(min_temperature_str)}°C")
+                    print_cyan(day + 1)
+                    print_green('+' * int(min_temperature_str))
+                    print_red('+' * int(max_temperature_str))
+                    print_cyan(
+                        f"{float(min_temperature_str)}°C - {float(max_temperature_str)}°C\n")
                 else:
                     pass
         else:
             print("\nSorry, Don't have data  for this year..  \n")
 
+def validate_year(year):
+    if not year.isdigit() or int(year) < 0:
+        return False
+    return True
+
+def validate_month(month):
+    if not month.isdigit() or int(month) < 1 or int(month) > 12:
+        return False
+    return True
 
 def main():
     # Folder path
@@ -271,8 +288,10 @@ def main():
     # Process the -c flag
     if args.c:
         year, month = args.c.split('/')
+        print(year)
+        print(month)
         # Perform validation on year and month
-        if not year.isdigit() or not month.isdigit() or int(year) < 0 or int(month) < 1 or int(month) > 12:
+        if not validate_year(year) or not validate_month(month):
             print("Invalid YEAR/MONTH format or values")
             return
         cal.horizontal_bar_charts(year, month, parsed_data)
@@ -281,7 +300,7 @@ def main():
     if args.a:
         year, month = args.a.split('/')
         # Perform validation on year and month
-        if not year.isdigit() or not month.isdigit() or int(year) < 0 or int(month) < 1 or int(month) > 12:
+        if not validate_year(year) and not validate_month(month):
             print("Invalid YEAR/MONTH format or values")
             return
         cal.monthly_report(year, month, parsed_data)
@@ -290,7 +309,7 @@ def main():
     if args.e:
         year = args.e
         # Perform validation on year
-        if not year.isdigit() or int(year) < 0:
+        if not validate_year(year):
             print("Invalid YEAR value")
             return
         cal.yearly_report(year, parsed_data)
@@ -299,7 +318,7 @@ def main():
     if args.b:
         year, month = args.b.split('/')
         # Perform validation on year and month
-        if not year.isdigit() or not month.isdigit() or int(year) < 0 or int(month) < 1 or int(month) > 12:
+        if not validate_year(year) and not validate_month(month):
             print("Invalid YEAR/MONTH format or values")
             return
         cal.bounus(year, month, parsed_data)
