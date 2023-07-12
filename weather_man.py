@@ -28,7 +28,7 @@ def print_red(text):
     print(f"{RED} {text}{END_COLOR}",  end="")
 
 
-class Parse_data:
+class Parse_Data:
     def __init__(self):
         self.weather_reading = defaultdict(lambda: defaultdict(dict))
 
@@ -73,7 +73,7 @@ class Parse_data:
 # Class for calculations for reports
 
 
-class Weather_report_calculation:
+class Weather_Report_Calculation:
     def __init__(self) -> None:
         self.max_temperature = {'temperature': float(
             '-inf'), 'day': '', 'month': ''}
@@ -265,7 +265,7 @@ class Reporting(ABC):
             self.perform_calculations(record)
 
 
-class Maxtempstat(Reporting):
+class MaxTempStat(Reporting):
     def __init__(self, from_date, to_date):
         self.stats = {'from_date': from_date,
                       'to_date': to_date}
@@ -282,7 +282,7 @@ class Maxtempstat(Reporting):
         start_date = datetime.strptime(from_date, '%Y-%m-%d')
         end_date = datetime.strptime(to_date, '%Y-%m-%d')
         compare_date = datetime.strptime(date_to_compare['PKT'], '%Y-%m-%d')
-        return Maxtempstat.compare_dates(start_date, end_date, compare_date)
+        return MaxTempStat.compare_dates(start_date, end_date, compare_date)
 
     def perform_calculations(self, record):
         if record['Max TemperatureC']:
@@ -293,13 +293,13 @@ class Maxtempstat(Reporting):
 def main():
     # Folder path
     folder_path = "../weatherfiles"
-    weather_data = Parse_data()
+    weather_data = Parse_Data()
     # Returning Parsed data
     parsed_data = weather_data.parse_weather_data(folder_path)
 
     # Now Calculating the results
-    cal = Weather_report_calculation()
-    max_temp = Maxtempstat('2005-5-1', '2005-5-10')
+    cal = Weather_Report_Calculation()
+    max_temp = MaxTempStat('2005-5-1', '2005-5-10')
     max_temp.process_records(parsed_data['2005']['5'][5])
 
     # Custom type function for year and month validation
