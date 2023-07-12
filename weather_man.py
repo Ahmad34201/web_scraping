@@ -4,7 +4,8 @@ from collections import defaultdict
 import csv
 import argparse
 from abc import ABC, abstractmethod
-import datetime
+from datetime import datetime
+
 
 # ANSI escape sequences for colors
 CYAN = "\033[36m"
@@ -278,29 +279,13 @@ class Maxtempstat(Reporting):
         from_date = self.stats['from_date']
         to_date = self.stats['to_date']
 
-        date_parts = date_to_compare['PKT'].split('-')
-        year = int(date_parts[0])
-        month = int(date_parts[1])
-        day = int(date_parts[2])
-
-        start_date_parts = from_date.split('-')
-        start_year = int(start_date_parts[0])
-        start_month = int(start_date_parts[1])
-        start_day = int(start_date_parts[2])
-
-        end_date_parts = to_date.split('-')
-        end_year = int(end_date_parts[0])
-        end_month = int(end_date_parts[1])
-        end_day = int(end_date_parts[2])
-
-        start_date = datetime.date(start_year, start_month, start_day)
-        end_date = datetime.date(end_year, end_month, end_day)
-        compare_date = datetime.date(year, month, day)
+        start_date = datetime.strptime(from_date, '%Y-%m-%d')
+        end_date = datetime.strptime(to_date, '%Y-%m-%d')
+        compare_date = datetime.strptime(date_to_compare['PKT'], '%Y-%m-%d')
         return Maxtempstat.compare_dates(start_date, end_date, compare_date)
 
     def perform_calculations(self, record):
         if record['Max TemperatureC']:
-            print(record['Max TemperatureC'])
             if int(record['Max TemperatureC']) > self.max_temp:
                 self.max_temp = int(record['Max TemperatureC'])
 
