@@ -3,8 +3,6 @@ import os
 from collections import defaultdict
 import csv
 import argparse
-from abc import ABC, abstractmethod
-from datetime import datetime
 
 
 # ANSI escape sequences for colors
@@ -248,48 +246,6 @@ class WeatherReportCalculation:
             print("\nSorry, Don't have data  for this year..  \n")
 
 
-class Reporting(ABC):
-    def __init__(self):
-        self.stats = {}
-
-    @abstractmethod
-    def is_record_required(self, record):
-        pass
-
-    @abstractmethod
-    def perform_calculations(self, record):
-        pass
-
-    def process_records(self, record):
-        if self.is_record_required(record):
-            self.perform_calculations(record)
-
-
-class MaxTempStat(Reporting):
-    def __init__(self, from_date, to_date):
-        self.stats = {'from_date': from_date,
-                      'to_date': to_date}
-        self.max_temp = float("-inf")
-
-    @staticmethod
-    def compare_dates(start, end, date_to_compare):
-        return start <= date_to_compare <= end
-
-    def is_record_required(self, date_to_compare):
-        from_date = self.stats['from_date']
-        to_date = self.stats['to_date']
-
-        start_date = datetime.strptime(from_date, '%Y-%m-%d')
-        end_date = datetime.strptime(to_date, '%Y-%m-%d')
-        compare_date = datetime.strptime(date_to_compare['PKT'], '%Y-%m-%d')
-        return MaxTempStat.compare_dates(start_date, end_date, compare_date)
-
-    def perform_calculations(self, record):
-        if record['Max TemperatureC']:
-            if int(record['Max TemperatureC']) > self.max_temp:
-                self.max_temp = int(record['Max TemperatureC'])
-
-
 def main():
     # Folder path
     folder_path = "../weatherfiles"
@@ -299,69 +255,68 @@ def main():
 
     # Now Calculating the results
     cal = WeatherReportCalculation()
-    max_temp = MaxTempStat('2005-5-1', '2005-5-10')
-    max_temp.process_records(parsed_data['2005']['5'][5])
+    
 
     # Custom type function for year and month validation
-    # def validate_year_month(value):
-    #     if value is None:
-    #         raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
-    #     try:
-    #         year, month = value.split('/')
-    #         year = int(year)
-    #         month = int(month)
-    #         if year < 0 or month < 1 or month > 12:
-    #             raise argparse.ArgumentTypeError(
-    #                 "Invalid YEAR/MONTH format or values")
-    #         return str(year), str(month)
-    #     except ValueError:
-    #         raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
+    def validate_year_month(value):
+        if value is None:
+            raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
+        try:
+            year, month = value.split('/')
+            year = int(year)
+            month = int(month)
+            if year < 0 or month < 1 or month > 12:
+                raise argparse.ArgumentTypeError(
+                    "Invalid YEAR/MONTH format or values")
+            return str(year), str(month)
+        except ValueError:
+            raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
 
-    # # Create an ArgumentParser object
-    # parser = argparse.ArgumentParser(description="Weather Report Program")
+    # Create an ArgumentParser object
+    parser = argparse.ArgumentParser(description="Weather Report Program")
 
-    # # Add argument for -c flag
-    # parser.add_argument("-c", metavar="YEAR/MONTH",
-    #                     type=validate_year_month,
-    #                     help="Generate horizontal bar charts for a specific year and month")
+    # Add argument for -c flag
+    parser.add_argument("-c", metavar="YEAR/MONTH",
+                        type=validate_year_month,
+                        help="Generate horizontal bar charts for a specific year and month")
 
-    # # Add argument for -a flag
-    # parser.add_argument("-a", metavar="YEAR/MONTH",
-    #                     type=validate_year_month,
-    #                     help="Generate monthly report for a specific year and month")
+    # Add argument for -a flag
+    parser.add_argument("-a", metavar="YEAR/MONTH",
+                        type=validate_year_month,
+                        help="Generate monthly report for a specific year and month")
 
-    # # Add argument for -e flag
-    # parser.add_argument("-e", metavar="YEAR",
-    #                     type=int,
-    #                     help="Generate yearly report for a specific year")
+    # Add argument for -e flag
+    parser.add_argument("-e", metavar="YEAR",
+                        type=int,
+                        help="Generate yearly report for a specific year")
 
-    # # Add argument for -b flag
-    # parser.add_argument("-b", metavar="YEAR/MONTH",
-    #                     type=validate_year_month,
-    #                     help="Generate bonus report for a specific year and month")
+    # Add argument for -b flag
+    parser.add_argument("-b", metavar="YEAR/MONTH",
+                        type=validate_year_month,
+                        help="Generate bonus report for a specific year and month")
 
-    # # Parse the command-line arguments
-    # args = parser.parse_args()
+    # Parse the command-line arguments
+    args = parser.parse_args()
 
-    # # Process the -c flag
-    # if args.c:
-    #     year, month = args.c
-    #     cal.horizontal_bar_charts(year, month, parsed_data)
+    # Process the -c flag
+    if args.c:
+        year, month = args.c
+        cal.horizontal_bar_charts(year, month, parsed_data)
 
-    # # Process the -a flag
-    # if args.a:
-    #     year, month = args.a
-    #     cal.monthly_report(year, month, parsed_data)
+    # Process the -a flag
+    if args.a:
+        year, month = args.a
+        cal.monthly_report(year, month, parsed_data)
 
-    # # Process the -e flag
-    # if args.e:
-    #     year = args.e
-    #     cal.yearly_report(year, parsed_data)
+    # Process the -e flag
+    if args.e:
+        year = args.e
+        cal.yearly_report(year, parsed_data)
 
-    # # Process the -b flag
-    # if args.b:
-    #     year, month = args.b
-    #     cal.bounus(year, month, parsed_data)
+    # Process the -b flag
+    if args.b:
+        year, month = args.b
+        cal.bounus(year, month, parsed_data)
 
 
 if __name__ == "__main__":
