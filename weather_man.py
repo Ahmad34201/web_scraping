@@ -28,7 +28,7 @@ def print_red(text):
     print(f"{RED} {text}{END_COLOR}",  end="")
 
 
-class Parse_Data:
+class ParseData:
     def __init__(self):
         self.weather_reading = defaultdict(lambda: defaultdict(dict))
 
@@ -73,7 +73,7 @@ class Parse_Data:
 # Class for calculations for reports
 
 
-class Weather_Report_Calculation:
+class WeatherReportCalculation:
     def __init__(self) -> None:
         self.max_temperature = {'temperature': float(
             '-inf'), 'day': '', 'month': ''}
@@ -293,12 +293,12 @@ class MaxTempStat(Reporting):
 def main():
     # Folder path
     folder_path = "../weatherfiles"
-    weather_data = Parse_Data()
+    weather_data = ParseData()
     # Returning Parsed data
     parsed_data = weather_data.parse_weather_data(folder_path)
 
     # Now Calculating the results
-    cal = Weather_Report_Calculation()
+    cal = WeatherReportCalculation()
     max_temp = MaxTempStat('2005-5-1', '2005-5-10')
     max_temp.process_records(parsed_data['2005']['5'][5])
 
