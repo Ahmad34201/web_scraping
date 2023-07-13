@@ -306,7 +306,8 @@ def main():
         max_temp = MaxTempStat(f'{year}-{month}-{1}', f'{year}-{month}-{30}' or  f'{year}-{month}-{31}', parsed_data)
         min_temp = MinTempStat(f'{year}-{month}-{1}', f'{year}-{month}-{30}' or  f'{year}-{month}-{31}', parsed_data)
         
-        chain_process = ChainProcess(parsed_data['2005']['8'][10], max_temp, max_humidity, min_temp)
+        chain_process = ChainProcess(max_temp, max_humidity, min_temp)
+        chain_process.process_records(parsed_data['2005']['8'][10])
         # cal.horizontal_bar_charts(year, month, parsed_data)
 
     # Process the -a flag

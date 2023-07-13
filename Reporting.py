@@ -164,12 +164,11 @@ class MaxHumidityStat(Reporting):
         
 
 class ChainProcess:
-    def __init__(self, record_to_process, *args):
-        print("length is ", len(args))
-        for obj in range(len(args)):
-            self.process_records(args[obj], record_to_process)
-    
-    def process_records(self, obj, record_to_process):
-        print(obj)
-        obj.process_records(record_to_process)
+    def __init__(self, *args):
+        self.objs_to_process = args
+        
+    def process_records(self, record_to_process):
+        for obj in self.objs_to_process:
+            obj.process_records(record_to_process)
+      
         
