@@ -3,7 +3,9 @@ import os
 from collections import defaultdict
 import csv
 import argparse
-from reporting import MaxTempStat, MinTempStat, MaxHumidityStat, ChainProcess
+import datetime
+import calendar
+from reporting import MaxTempStat, MinTempStat, MaxHumidityStat, ChainProcess, RecordPreprocessor
 
 
 # ANSI escape sequences for colors
@@ -247,6 +249,13 @@ class WeatherReportCalculation:
             print("\nSorry, Don't have data  for this year..  \n")
 
 
+def get_dates(year, month):
+    from_date = datetime.datetime.strptime(f'{year}-{month}-{1}', '%Y-%m-%d')
+    start, end = calendar.monthrange(year, month)
+    
+    to_date = datetime.datetime.strptime(f'{year}-{month}-{end}', '%Y-%m-%d')
+    return from_date, to_date
+
 def main():
     # Folder path
     folder_path = "../weatherfiles"
@@ -256,9 +265,9 @@ def main():
 
     # Now Calculating the results
     cal = WeatherReportCalculation()
-    
 
     # Custom type function for year and month validation
+
     def validate_year_month(value):
         if value is None:
             raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
@@ -298,22 +307,29 @@ def main():
 
     # Parse the command-line arguments
     args = parser.parse_args()
-    
+
     # Process the -c flag
     if args.c:
         year, month = args.c
-        max_humidity = MaxHumidityStat(f'{year}-{month}-{1}', f'{year}-{month}-{30}' or  f'{year}-{month}-{31}', parsed_data)
-        max_temp = MaxTempStat(f'{year}-{month}-{1}', f'{year}-{month}-{30}' or  f'{year}-{month}-{31}', parsed_data)
-        min_temp = MinTempStat(f'{year}-{month}-{1}', f'{year}-{month}-{30}' or  f'{year}-{month}-{31}', parsed_data)
-        
-        chain_process = ChainProcess(max_temp, max_humidity, min_temp)
-        chain_process.process_records(parsed_data['2005']['8'][10])
+        start , end = get_dates(int(year), int(month))
+        max_humidity = MaxHumidityStat(start, end)
+        max_temp = MaxTempStat(start, end)
+        min_temp = MinTempStat(start, end)
+        # have to create object of preprocessor
+        preprocessor = RecordPreprocessor()
+        chain_process = ChainProcess(preprocessor, max_temp, max_humidity, min_temp)
+        for month in parsed_data.get(year, {}):
+            for daily in parsed_data.get(year, {}).get(month, []):
+                chain_process.process_record(daily)
+
+
         # cal.horizontal_bar_charts(year, month, parsed_data)
 
     # Process the -a flag
     if args.a:
         year, month = args.a
-        max_temp = MaxHumidityStat(f'{year}-{month}-{1}', f'{year}-{month}-{30}'  or  f'{year}-{month}-{31}', parsed_data)
+        max_temp = MaxHumidityStat(
+            f'{year}-{month}-{1}', f'{year}-{month}-{30}' or f'{year}-{month}-{31}', parsed_data)
         max_temp.process_records(parsed_data['2007']['9'][19])
         # cal.monthly_report(year, month, parsed_data)
 
