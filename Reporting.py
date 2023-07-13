@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-
+import time
 
 class Reporting(ABC):
     def __init__(self):
@@ -59,9 +59,11 @@ class MaxTempStat(Reporting):
         return self.compare_dates(self.stats['from_date'], self.stats['to_date'], compare_date)
 
     def perform_calculations(self, record):
+        print("Before Max temp ", self.stats['max_temp'])
         if record['Max TemperatureC']:
             self.stats['max_temp'] = max(
                 (self.stats['max_temp']), float(record['Max TemperatureC']))
+        print("Before Max temp ", self.stats['max_temp'])
 
 
 class MinTempStat(Reporting):
@@ -153,8 +155,21 @@ class MaxHumidityStat(Reporting):
         return self.compare_dates(self.stats['from_date'], self.stats['to_date'], compare_date)
 
     def perform_calculations(self, record):
-        print("before max humidity ", self.stats['max_humidity'])
+        print("Before max humidity ", self.stats['max_humidity'])
         if record['Max Humidity']:
             self.stats['max_humidity'] = min(
                 (self.stats['max_humidity']), float(record['Max Humidity']))
-        print("after max humidity ", self.stats['max_humidity'])
+        print("After max humidity ", self.stats['max_humidity'])
+        
+        
+
+class ChainProcess:
+    def __init__(self, record_to_process, *args):
+        print("length is ", len(args))
+        for obj in range(len(args)):
+            self.process_records(args[obj], record_to_process)
+    
+    def process_records(self, obj, record_to_process):
+        print(obj)
+        obj.process_records(record_to_process)
+        

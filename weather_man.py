@@ -3,7 +3,7 @@ import os
 from collections import defaultdict
 import csv
 import argparse
-from reporting import MaxTempStat, MinTempStat, MaxHumidityStat
+from reporting import MaxTempStat, MinTempStat, MaxHumidityStat, ChainProcess
 
 
 # ANSI escape sequences for colors
@@ -302,8 +302,11 @@ def main():
     # Process the -c flag
     if args.c:
         year, month = args.c
-        max_temp = MaxHumidityStat(f'{year}-{month}-{1}', f'{year}-{month}-{30}' or  f'{year}-{month}-{31}', parsed_data)
-        max_temp.process_records(parsed_data['2005']['8'][10])
+        max_humidity = MaxHumidityStat(f'{year}-{month}-{1}', f'{year}-{month}-{30}' or  f'{year}-{month}-{31}', parsed_data)
+        max_temp = MaxTempStat(f'{year}-{month}-{1}', f'{year}-{month}-{30}' or  f'{year}-{month}-{31}', parsed_data)
+        min_temp = MinTempStat(f'{year}-{month}-{1}', f'{year}-{month}-{30}' or  f'{year}-{month}-{31}', parsed_data)
+        
+        chain_process = ChainProcess(parsed_data['2005']['8'][10], max_temp, max_humidity, min_temp)
         # cal.horizontal_bar_charts(year, month, parsed_data)
 
     # Process the -a flag
