@@ -3,6 +3,7 @@ import os
 from collections import defaultdict
 import csv
 import argparse
+from reporting import MaxTempStat, MinTempStat, MaxHumidityStat
 
 
 # ANSI escape sequences for colors
@@ -297,26 +298,32 @@ def main():
 
     # Parse the command-line arguments
     args = parser.parse_args()
-
+    
     # Process the -c flag
     if args.c:
         year, month = args.c
-        cal.horizontal_bar_charts(year, month, parsed_data)
+        max_temp = MaxHumidityStat(f'{year}-{month}-{1}', f'{year}-{month}-{30}' or  f'{year}-{month}-{31}', parsed_data)
+        max_temp.process_records(parsed_data['2005']['8'][10])
+        # cal.horizontal_bar_charts(year, month, parsed_data)
 
     # Process the -a flag
     if args.a:
         year, month = args.a
-        cal.monthly_report(year, month, parsed_data)
+        max_temp = MaxHumidityStat(f'{year}-{month}-{1}', f'{year}-{month}-{30}'  or  f'{year}-{month}-{31}', parsed_data)
+        max_temp.process_records(parsed_data['2007']['9'][19])
+        # cal.monthly_report(year, month, parsed_data)
 
     # Process the -e flag
     if args.e:
         year = args.e
-        cal.yearly_report(year, parsed_data)
+        max_temp = MaxHumidityStat(year, parsed_data)
+        max_temp.process_records(parsed_data['2006']['5'][20])
+        # cal.yearly_report(year, parsed_data)
 
     # Process the -b flag
-    if args.b:
-        year, month = args.b
-        cal.bounus(year, month, parsed_data)
+    # if args.b:
+    #     year, month = args.b
+    #     cal.bounus(year, month, parsed_data)
 
 
 if __name__ == "__main__":
