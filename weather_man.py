@@ -257,43 +257,35 @@ def get_dates(year, month):
     return from_date, to_date
 
 
+def validate_year_month(value):
+    if value is None:
+        raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
+    try:
+        year, month = value.split('/')
+        year = int(year)
+        month = int(month)
+        if year < 0 or month < 1 or month > 12:
+            raise argparse.ArgumentTypeError(
+                "Invalid YEAR/MONTH format or values")
+        return str(year), str(month)
+    except ValueError:
+        raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
+
+
+def validate_year(value):
+    if value is None:
+        raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
+    try:
+        year = int(value)
+        if year < 0:
+            raise argparse.ArgumentTypeError(
+                "Invalid YEAR/MONTH format or values")
+        return str(year)
+    except ValueError:
+        raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
+
+
 def main():
-    # Folder path
-    folder_path = "../weatherfiles"
-    weather_data = ParseData()
-    # Returning Parsed data
-    parsed_data = weather_data.parse_weather_data(folder_path)
-
-    # Now Calculating the results
-    cal = WeatherReportCalculation()
-
-    # Custom type function for year and month validation
-
-    def validate_year_month(value):
-        if value is None:
-            raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
-        try:
-            year, month = value.split('/')
-            year = int(year)
-            month = int(month)
-            if year < 0 or month < 1 or month > 12:
-                raise argparse.ArgumentTypeError(
-                    "Invalid YEAR/MONTH format or values")
-            return str(year), str(month)
-        except ValueError:
-            raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
-
-    def validate_year(value):
-        if value is None:
-            raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
-        try:
-            year = int(value)
-            if year < 0:
-                raise argparse.ArgumentTypeError(
-                    "Invalid YEAR/MONTH format or values")
-            return str(year)
-        except ValueError:
-            raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
 
     # Create an ArgumentParser object
     parser = argparse.ArgumentParser(description="Weather Report Program")
@@ -301,6 +293,7 @@ def main():
     # Add argument for -c flag
     parser.add_argument("-c", metavar="YEAR",
                         type=validate_year,
+
                         help="Generate horizontal bar charts for a specific year and month")
 
     # Add argument for -a flag
@@ -314,12 +307,20 @@ def main():
                         help="Generate yearly report for a specific year")
 
     # Add argument for -b flag
-    parser.add_argument("-b", metavar="YEAR/MONTH",
-                        type=validate_year_month,
-                        help="Generate bonus report for a specific year and month")
+    parser.add_argument("-path", metavar="PATH",
+                        type=str,
+                        help="Folder Path for files")
 
     # Parse the command-line arguments
     args = parser.parse_args()
+
+    weather_data = ParseData()
+    # Returning Parsed data
+    if args.path:
+        folder_path = args.path
+        parsed_data = weather_data.parse_weather_data(folder_path)
+    else:
+        print("Folder Path not given")
 
     # Process the -e flag
     if args.e:
