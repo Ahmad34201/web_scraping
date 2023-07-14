@@ -5,7 +5,7 @@ import csv
 import argparse
 import datetime
 import calendar
-from reporting import MaxTempStat, MinTempStat, MaxHumidityStat, ChainProcess, RecordPreprocessor
+from reporting import MaxTempStat, MinTempStat, MaxHumidityStat, ChainProcess, RecordPreprocessor, AverageMaxTempStat
 
 
 # ANSI escape sequences for colors
@@ -315,9 +315,10 @@ def main():
         max_humidity = MaxHumidityStat(start, end)
         max_temp = MaxTempStat(start, end)
         min_temp = MinTempStat(start, end)
+        avergae_max_temp = AverageMaxTempStat(start, end)
         # have to create object of preprocessor
         preprocessor = RecordPreprocessor()
-        chain_process = ChainProcess(preprocessor, max_temp, max_humidity, min_temp)
+        chain_process = ChainProcess(preprocessor, max_temp, max_humidity, min_temp, avergae_max_temp)
         for month in parsed_data.get(year, {}):
             for daily in parsed_data.get(year, {}).get(month, []):
                 chain_process.process_record(daily)

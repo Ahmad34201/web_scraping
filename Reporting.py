@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 
+
 class Reporting(ABC):
     def __init__(self):
         self.stats = {}
@@ -57,6 +58,37 @@ class MaxHumidityStat(Reporting):
             self.stats['max_humidity'] = min(
                 (self.stats['max_humidity']), (record['Max Humidity']))
         print("After max humidity ", self.stats['max_humidity'])
+
+
+class AverageStat(Reporting):
+    def __init__(self, from_date, to_date, key, header_key):
+        super().__init__()
+        self.count = 0
+        self.key = key
+        self.header_key = header_key
+        self.stats = {'from_date': from_date, 'to_date': to_date, self.key: float("-inf")}
+
+    def perform_calculations(self, record):
+        self.count += 1
+        print("Before", self.header_key, self.stats[self.key])
+        if record[self.header_key]:
+            self.stats[self.key] = (self.stats[self.key] + record[self.header_key]) / self.count
+        print("After", self.header_key, self.stats[self.key])
+
+class AverageMaxTempStat(AverageStat):
+    def __init__(self, from_date, to_date):
+        super().__init__(from_date, to_date, 'average_max_temp', 'Max TemperatureC')
+
+
+class AverageMinTempStat(AverageStat):
+    def __init__(self, from_date, to_date):
+        super().__init__(from_date, to_date, 'average_min_temp', 'Min TemperatureC')
+
+
+class AverageMeanHumidity(AverageStat):
+    def __init__(self, from_date, to_date):
+        super().__init__(from_date, to_date, 'average_mean_humidity', 'Mean Humidity')
+
 
 
 class ChainProcess:
