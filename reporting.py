@@ -7,6 +7,7 @@ class Reporting(ABC):
         self.stats = {}
 
     def is_record_required(self, record):
+
         return self.stats['from_date'] <= record['PKT'] <= self.stats['to_date']
 
     @abstractmethod
@@ -104,7 +105,8 @@ class RecordPreprocessor:
     def process_record(self, record):
         if 'PKT' not in record:
             record['PKT'] = record.pop('PKST')
-        record['PKT'] = datetime.strptime(record['PKT'], '%Y-%m-%d')
+        if not isinstance(record["PKT"], datetime):
+            record['PKT'] = datetime.strptime(record['PKT'], '%Y-%m-%d')
 
         if record['Max TemperatureC']:
             record['Max TemperatureC'] = float(record['Max TemperatureC'])

@@ -283,12 +283,24 @@ def main():
         except ValueError:
             raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
 
+    def validate_year(value):
+        if value is None:
+            raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
+        try:
+            year = int(value)
+            if year < 0:
+                raise argparse.ArgumentTypeError(
+                    "Invalid YEAR/MONTH format or values")
+            return str(year)
+        except ValueError:
+            raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
+
     # Create an ArgumentParser object
     parser = argparse.ArgumentParser(description="Weather Report Program")
 
     # Add argument for -c flag
-    parser.add_argument("-c", metavar="YEAR/MONTH",
-                        type=validate_year_month,
+    parser.add_argument("-c", metavar="YEAR",
+                        type=validate_year,
                         help="Generate horizontal bar charts for a specific year and month")
 
     # Add argument for -a flag
@@ -297,8 +309,8 @@ def main():
                         help="Generate monthly report for a specific year and month")
 
     # Add argument for -e flag
-    parser.add_argument("-e", metavar="YEAR",
-                        type=int,
+    parser.add_argument("-e", metavar="YEAR/MONTH",
+                        type=validate_year_month,
                         help="Generate yearly report for a specific year")
 
     # Add argument for -b flag
@@ -311,16 +323,15 @@ def main():
 
     # Process the -e flag
     if args.e:
-        year, month = args.c
+        year, month = args.e
         start, end = get_dates(int(year), int(month))
         max_humidity = MaxHumidityStat(start, end)
         max_temp = MaxTempStat(start, end)
         min_temp = MinTempStat(start, end)
-        avergae_max_temp = AverageMaxTempStat(start, end)
         # have to create object of preprocessor
         preprocessor = RecordPreprocessor()
         chain_process = ChainProcess(
-            preprocessor, max_temp, max_humidity, min_temp, avergae_max_temp)
+            preprocessor, max_temp, max_humidity, min_temp)
         for month in parsed_data.get(year, {}):
             for daily in parsed_data.get(year, {}).get(month, []):
                 chain_process.process_record(daily)
@@ -334,7 +345,6 @@ def main():
         avergae_max_temp = AverageMaxTempStat(start, end)
         avergae_min_temp = AverageMinTempStat(start, end)
         avergae_mean_humidity = AverageMeanHumidity(start, end)
-
         # have to create object of preprocessor
         preprocessor = RecordPreprocessor()
         chain_process = ChainProcess(
@@ -344,12 +354,23 @@ def main():
                 chain_process.process_record(daily)
         # cal.monthly_report(year, month, parsed_data)
 
-    # Process the -e flag
-    if args.e:
-        year = args.e
-        start, end = get_dates(int(year), int(month))
-        max_temp = MaxHumidityStat(year, parsed_data)
-        max_temp.process_records(parsed_data['2006']['5'][20])
+    # Process the -c flag
+    if args.c:
+        year = args.c
+        for month in range(1, 13):
+            start, end = get_dates(int(year), int(month))
+            max_humidity = MaxHumidityStat(start, end)
+            max_temp = MaxTempStat(start, end)
+            min_temp = MinTempStat(start, end)
+            avergae_max_temp = AverageMaxTempStat(start, end)
+            # have to create object of preprocessor
+            preprocessor = RecordPreprocessor()
+            chain_process = ChainProcess(
+                preprocessor, max_temp, max_humidity, min_temp, avergae_max_temp)
+            for month in parsed_data.get(year, {}):
+                for daily in parsed_data.get(year, {}).get(month, []):
+                    chain_process.process_record(daily)
+
         # cal.yearly_report(year, parsed_data)
 
 
