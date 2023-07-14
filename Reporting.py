@@ -66,14 +66,15 @@ class AverageStat(Reporting):
         self.count = 0
         self.key = key
         self.header_key = header_key
-        self.stats = {'from_date': from_date, 'to_date': to_date, self.key: float("-inf")}
+        self.stats = {'from_date': from_date, 'to_date': to_date, self.key: 0}
 
     def perform_calculations(self, record):
-        self.count += 1
-        print("Before", self.header_key, self.stats[self.key])
         if record[self.header_key]:
-            self.stats[self.key] = (self.stats[self.key] + record[self.header_key]) / self.count
+            self.count += 1
+            self.stats[self.key] = (
+                self.stats[self.key] + record[self.header_key]) / self.count
         print("After", self.header_key, self.stats[self.key])
+
 
 class AverageMaxTempStat(AverageStat):
     def __init__(self, from_date, to_date):
@@ -87,8 +88,7 @@ class AverageMinTempStat(AverageStat):
 
 class AverageMeanHumidity(AverageStat):
     def __init__(self, from_date, to_date):
-        super().__init__(from_date, to_date, 'average_mean_humidity', 'Mean Humidity')
-
+        super().__init__(from_date, to_date, 'average_mean_humidity', ' Mean Humidity')
 
 
 class ChainProcess:
@@ -120,5 +120,10 @@ class RecordPreprocessor:
             record['Max Humidity'] = float(record['Max Humidity'])
         else:
             record['Max Humidity'] = None
+
+        if record[' Mean Humidity']:
+            record[' Mean Humidity'] = float(record[' Mean Humidity'])
+        else:
+            record[' Mean Humidity'] = None
 
         return record

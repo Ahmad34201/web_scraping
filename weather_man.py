@@ -5,7 +5,7 @@ import csv
 import argparse
 import datetime
 import calendar
-from reporting import MaxTempStat, MinTempStat, MaxHumidityStat, ChainProcess, RecordPreprocessor, AverageMaxTempStat
+from reporting import MaxTempStat, MinTempStat, MaxHumidityStat, ChainProcess, RecordPreprocessor, AverageMaxTempStat, AverageMinTempStat, AverageMeanHumidity
 
 
 # ANSI escape sequences for colors
@@ -252,9 +252,10 @@ class WeatherReportCalculation:
 def get_dates(year, month):
     from_date = datetime.datetime.strptime(f'{year}-{month}-{1}', '%Y-%m-%d')
     start, end = calendar.monthrange(year, month)
-    
+
     to_date = datetime.datetime.strptime(f'{year}-{month}-{end}', '%Y-%m-%d')
     return from_date, to_date
+
 
 def main():
     # Folder path
@@ -308,43 +309,48 @@ def main():
     # Parse the command-line arguments
     args = parser.parse_args()
 
-    # Process the -c flag
-    if args.c:
+    # Process the -e flag
+    if args.e:
         year, month = args.c
-        start , end = get_dates(int(year), int(month))
+        start, end = get_dates(int(year), int(month))
         max_humidity = MaxHumidityStat(start, end)
         max_temp = MaxTempStat(start, end)
         min_temp = MinTempStat(start, end)
         avergae_max_temp = AverageMaxTempStat(start, end)
         # have to create object of preprocessor
         preprocessor = RecordPreprocessor()
-        chain_process = ChainProcess(preprocessor, max_temp, max_humidity, min_temp, avergae_max_temp)
+        chain_process = ChainProcess(
+            preprocessor, max_temp, max_humidity, min_temp, avergae_max_temp)
         for month in parsed_data.get(year, {}):
             for daily in parsed_data.get(year, {}).get(month, []):
                 chain_process.process_record(daily)
-
 
         # cal.horizontal_bar_charts(year, month, parsed_data)
 
     # Process the -a flag
     if args.a:
         year, month = args.a
-        max_temp = MaxHumidityStat(
-            f'{year}-{month}-{1}', f'{year}-{month}-{30}' or f'{year}-{month}-{31}', parsed_data)
-        max_temp.process_records(parsed_data['2007']['9'][19])
+        start, end = get_dates(int(year), int(month))
+        avergae_max_temp = AverageMaxTempStat(start, end)
+        avergae_min_temp = AverageMinTempStat(start, end)
+        avergae_mean_humidity = AverageMeanHumidity(start, end)
+
+        # have to create object of preprocessor
+        preprocessor = RecordPreprocessor()
+        chain_process = ChainProcess(
+            preprocessor, avergae_max_temp, avergae_min_temp, avergae_mean_humidity)
+        for month in parsed_data.get(year, {}):
+            for daily in parsed_data.get(year, {}).get(month, []):
+                chain_process.process_record(daily)
         # cal.monthly_report(year, month, parsed_data)
 
     # Process the -e flag
     if args.e:
         year = args.e
+        start, end = get_dates(int(year), int(month))
         max_temp = MaxHumidityStat(year, parsed_data)
         max_temp.process_records(parsed_data['2006']['5'][20])
         # cal.yearly_report(year, parsed_data)
-
-    # Process the -b flag
-    # if args.b:
-    #     year, month = args.b
-    #     cal.bounus(year, month, parsed_data)
 
 
 if __name__ == "__main__":
