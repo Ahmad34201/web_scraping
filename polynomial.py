@@ -9,11 +9,6 @@ class Polynomial:
         ascii_list = [ord(char) for char in input_string]
         return cls(ascii_list)
 
-    def extract_coefficients(self, polynomial_string):
-        for character in reversed(polynomial_string):
-            self.coefficients.append(ord(character))
-        return self.coefficients
-
     # Calculating the Power by using modulo operator
     def fast_power(self, base, power, module_prime):
         power_result = 1
@@ -43,11 +38,11 @@ class Polynomial:
 
     def solve(self, x, prime):
         polynomial = self.get_polynomial(x, prime)
-        print("Final output is ", polynomial)
+        return polynomial
 
-
-MODULE_PRIME = int(input("Enter a prime number\n"))
-# polynomial = Polynomial([104, 101, 108, 108, 111])
-polynomial = Polynomial.ascii_from_string('sir')
-polynomial.solve(42098, MODULE_PRIME)
-polynomial.solve(30098, MODULE_PRIME)
+def main():
+    MODULE_PRIME = int(input("Enter a prime number\n"))
+    # polynomial = Polynomial([104, 101, 108, 108, 111])
+    polynomial = Polynomial.ascii_from_string('sir')
+    polynomial.solve(42098, MODULE_PRIME)
+    polynomial.solve(30098, MODULE_PRIME)
