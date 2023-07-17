@@ -26,11 +26,10 @@ class MaxTempStat(Reporting):
                       'max_temp': float("-inf")}
 
     def perform_calculations(self, record):
-        print("Before Max temp ", self.stats['max_temp'])
+
         if record['Max TemperatureC']:
             self.stats['max_temp'] = max(
                 (self.stats['max_temp']), (record['Max TemperatureC']))
-        print("Before Max temp ", self.stats['max_temp'])
 
 
 class MinTempStat(Reporting):
@@ -40,11 +39,9 @@ class MinTempStat(Reporting):
                       'min_temp': float("inf")}
 
     def perform_calculations(self, record):
-        print("Before Min temp ", self.stats['min_temp'])
         if record['Min TemperatureC']:
             self.stats['min_temp'] = min(
                 (self.stats['min_temp']), (record['Min TemperatureC']))
-        print("After min temp ", self.stats['min_temp'])
 
 
 class MaxHumidityStat(Reporting):
@@ -54,11 +51,10 @@ class MaxHumidityStat(Reporting):
                       'max_humidity': float("-inf")}
 
     def perform_calculations(self, record):
-        print("Before max humidity ", self.stats['max_humidity'])
+
         if record['Max Humidity']:
             self.stats['max_humidity'] = min(
                 (self.stats['max_humidity']), (record['Max Humidity']))
-        print("After max humidity ", self.stats['max_humidity'])
 
 
 class AverageStat(Reporting):
@@ -74,7 +70,6 @@ class AverageStat(Reporting):
             self.count += 1
             self.stats[self.key] = (
                 self.stats[self.key] + record[self.header_key]) / self.count
-        print("After", self.header_key, self.stats[self.key])
 
 
 class AverageMaxTempStat(AverageStat):
