@@ -7,7 +7,7 @@ class DataStorage:
         self.n = n
         self.prime = p
         self.k = k
-        self.boolean_array = [False] * n
+        self.boolean_array = [False] * self.prime
         self.random_numbers = self.generate_random_numbers()
 
     def generate_random_numbers(self):
@@ -26,17 +26,14 @@ class DataStorage:
     def store(self, s):
         indices = self.process_string(s)
         for index in indices:
-            if 0 <= index < self.n:
-                self.boolean_array[index] = True
+            self.boolean_array[index] = True
 
     def is_stored(self, s):
         indices = self.process_string(s)
-
-        return all(0 <= index < self.n and self.boolean_array[index] for index in indices)
+        return all(self.boolean_array[index] for index in indices)
 
 
 data = DataStorage(10, 23, 3)
 data.store('hello')
-
 print("Result:", data.is_stored('hello'))
 print("Result:", data.is_stored('world'))
