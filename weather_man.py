@@ -29,46 +29,56 @@ def print_red(text):
     print(f"{RED} {text}{END_COLOR}",  end="")
 
 
+def file_name_analysis(filename):
+    file_components = filename.split('_')
+    year = file_components[2]
+    month = file_components[3].split('.')[0]
+    month = month_to_number(month)
+    return year, month
+
+
 class ParseData:
     def __init__(self):
         self.weather_reading = defaultdict(lambda: defaultdict(dict))
 
-    def parse_weather_data(self, folder_path):
+    def parse_weather_data(self, folder_path, year_to_read, month_to_read):
         for filename in os.listdir(folder_path):
             # Filter files with a specific extension, e.g., .txt
             if filename.endswith(".txt"):
                 file_path = os.path.join(folder_path, filename)
 
-                with open(file_path, 'r') as file:
-                    reader = csv.DictReader(file, delimiter=',')
+                year, month = file_name_analysis(filename)
+                if year_to_read == year and month_to_read == month:
 
-                    # Skip the header line
-                    next(reader)
+                    with open(file_path, 'r') as file:
+                        reader = csv.DictReader(file, delimiter=',')
 
-                    monthly_data = []
-                    year, month = None, None
+                        # Skip the header line
+                        next(reader)
 
-                    for row in reader:
+                        monthly_data = []
+                        year, month = None, None
 
-                        # Check if the row is blank
-                        if not any(row.values()):
-                            continue
+                        for row in reader:
 
-                        # Retrieve the 'date' value from the row using 'get()' with two possible key names
-                        date_value = row.get('PKST') or row.get('PKT')
+                            # Check if the row is blank
+                            if not any(row.values()):
+                                continue
 
-                        if not year or not month:
-                            if date_value:
-                                # Extract year and month from the first row
-                                date_parts = date_value.split('-')
-                                year, month = date_parts[0], date_parts[1]
+                            # Retrieve the 'date' value from the row using 'get()' with two possible key names
+                            date_value = row.get('PKST') or row.get('PKT')
 
-                        # Store the row dictionary in monthly_data
-                        monthly_data.append(row)
+                            if not year or not month:
+                                if date_value:
+                                    # Extract year and month from the first row
+                                    date_parts = date_value.split('-')
+                                    year, month = date_parts[0], date_parts[1]
 
-                if year and month:
-                    self.weather_reading[year][month] = monthly_data
+                            # Store the row dictionary in monthly_data
+                            monthly_data.append(row)
 
+                    if year and month:
+                        self.weather_reading[year][month] = monthly_data
         return self.weather_reading
 
 
@@ -108,6 +118,48 @@ def validate_year(value):
         raise argparse.ArgumentTypeError("Invalid YEAR/MONTH format")
 
 
+def month_to_number(month_name):
+    months_dict = {
+        'Jan': '1',
+        'Feb': '2',
+        'Mar': '3',
+        'Apr': '4',
+        'May': '5',
+        'Jun': '6',
+        'Jul': '7',
+        'Aug': '8',
+        'Sep': '9',
+        'Oct': '10',
+        'Nov': '11',
+        'Dec': '12'
+    }
+
+    # upper_month_name = month_name.upper()
+    return months_dict.get(month_name)
+
+
+def process_statistics(year, month, statistics_classes, parsed_data):
+    chain_process = ChainProcess(*statistics_classes)
+
+    for month in parsed_data.get(year, {}):
+        for daily in parsed_data.get(year, {}).get(month, []):
+            chain_process.process_record(daily)
+
+    stats = chain_process.collect_stats()
+    return stats
+
+# Returning Parsed data
+
+
+def handle_file_handling(args, year, month):
+    weather_data = ParseData()
+    if args.path:
+        folder_path = args.path
+        return weather_data.parse_weather_data(folder_path, year, month)
+    else:
+        print("Folder Path not given")
+
+
 def main():
 
     # Create an ArgumentParser object
@@ -116,7 +168,6 @@ def main():
     # Add argument for -c flag
     parser.add_argument("-c", metavar="YEAR",
                         type=validate_year,
-
                         help="Generate horizontal bar charts for a specific year and month")
 
     # Add argument for -a flag
@@ -137,30 +188,18 @@ def main():
     # Parse the command-line arguments
     args = parser.parse_args()
 
-    weather_data = ParseData()
-    # Returning Parsed data
-    if args.path:
-        folder_path = args.path
-        parsed_data = weather_data.parse_weather_data(folder_path)
-    else:
-        print("Folder Path not given")
-
     # Process the -e flag
     if args.e:
         year, month = args.e
+        parsed_data = handle_file_handling(args, year, month)
         start, end = get_dates(int(year), int(month))
         max_humidity = MaxHumidityStat(start, end)
         max_temp = MaxTempStat(start, end)
         min_temp = MinTempStat(start, end)
-        # have to create object of preprocessor
         preprocessor = RecordPreprocessor()
-        chain_process = ChainProcess(
-            preprocessor, max_temp, max_humidity, min_temp)
-        for month in parsed_data.get(year, {}):
-            for daily in parsed_data.get(year, {}).get(month, []):
-                chain_process.process_record(daily)
-
-        stats = chain_process.collect_stats()
+        statistics_classes = [preprocessor, max_temp, max_humidity, min_temp]
+        stats = process_statistics(
+            year, month, statistics_classes, parsed_data)
         print(
             f"Highest temperature: {stats['max_temp']:.2f}C")
         print(
@@ -171,19 +210,17 @@ def main():
     # Process the -a flag
     if args.a:
         year, month = args.a
+        parsed_data = handle_file_handling(args, year, month)
         start, end = get_dates(int(year), int(month))
         avergae_max_temp = AverageMaxTempStat(start, end)
         avergae_min_temp = AverageMinTempStat(start, end)
         avergae_mean_humidity = AverageMeanHumidity(start, end)
         # have to create object of preprocessor
         preprocessor = RecordPreprocessor()
-        chain_process = ChainProcess(
-            preprocessor, avergae_max_temp, avergae_min_temp, avergae_mean_humidity)
-        for month in parsed_data.get(year, {}):
-            for daily in parsed_data.get(year, {}).get(month, []):
-                chain_process.process_record(daily)
-
-        stats = chain_process.collect_stats()
+        statistics_classes = [preprocessor, avergae_max_temp,
+                              avergae_min_temp, avergae_mean_humidity]
+        stats = process_statistics(
+            year, month, statistics_classes, parsed_data)
         print(
             f"Highest average temperature: {stats['average_max_temp']:.2f}C")
         print(
@@ -194,21 +231,17 @@ def main():
     # Process the -c flag
     if args.c:
         year = args.c
+        preprocessor = RecordPreprocessor()
         for month in range(1, 13):
-            start, end = get_dates(int(year), int(month))
+            parsed_data = handle_file_handling(args, year, str(month))
+            start, end = get_dates(int(year), month)
             max_humidity = MaxHumidityStat(start, end)
             max_temp = MaxTempStat(start, end)
             min_temp = MinTempStat(start, end)
-
-            # have to create object of preprocessor
-            preprocessor = RecordPreprocessor()
-            chain_process = ChainProcess(
-                preprocessor, max_temp, max_humidity, min_temp)
-            for month in parsed_data.get(year, {}):
-                for daily in parsed_data.get(year, {}).get(month, []):
-                    chain_process.process_record(daily)
-
-        stats = chain_process.collect_stats()
+            statistics_classes = [preprocessor,
+                                  max_temp, max_humidity, min_temp]
+            stats = process_statistics(
+                year, month, statistics_classes, parsed_data)
         print(
             f"Highest temperature: {stats['max_temp']:.2f}C")
         print(

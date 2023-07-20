@@ -17,6 +17,7 @@ class Reporting(ABC):
                 record[self.header_key])
 
     def process_record(self, record):
+
         if self.is_record_required(record):
             self.perform_calculations(record)
 
@@ -59,9 +60,10 @@ class AverageStat(Reporting):
             self.count += 1
             self.stats[self.key] = (
                 self.stats[self.key] + record[self.header_key]) / self.count
-    
+
     def get_updated_stat(self):
         pass
+
 
 class AverageMaxTempStat(AverageStat):
     def __init__(self, from_date, to_date):
@@ -85,9 +87,10 @@ class ChainProcess:
     def process_record(self, record):
         for handler in self.handlers:
             handler.process_record(record)
-    
+
     def collect_stats(self):
-        results = {handler.key: handler.stats[handler.key] for handler in self.handlers[1:]}
+        results = {handler.key: handler.stats[handler.key]
+                   for handler in self.handlers[1:]}
         return results
 
 
