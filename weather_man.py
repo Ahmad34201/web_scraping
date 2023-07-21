@@ -1,11 +1,11 @@
-
-import os
 from collections import defaultdict
-import csv
 import argparse
 import datetime
 import calendar
-from reporting import MaxTempStat, MinTempStat, MaxHumidityStat, ChainProcess, RecordPreprocessor, AverageMaxTempStat, AverageMinTempStat, AverageMeanHumidity
+import csv
+import os
+import re
+from reporting import *
 
 
 # ANSI escape sequences for colors
@@ -29,11 +29,16 @@ def print_red(text):
     print(f"{RED} {text}{END_COLOR}",  end="")
 
 
-def file_name_analysis(filename):
-    file_components = filename.split('_')
-    year = file_components[2]
-    month = file_components[3].split('.')[0]
-    month = month_to_number(month)
+def extract_year_and_month(filename):
+   # Regular expression to find the year (four consecutive digits) in the filename
+    year_regex = re.search(r"\d{4}", filename)
+    year = year_regex.group() if year_regex else None
+
+    # Regular expression to find the month abbreviation (three letters) in the filename
+    month_regex = re.search(
+        r"(?i)(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)", filename)
+    month = month_to_number(month_regex.group()
+                            ) if month_regex else None
     return year, month
 
 
@@ -47,7 +52,7 @@ class ParseData:
             if filename.endswith(".txt"):
                 file_path = os.path.join(folder_path, filename)
 
-                year, month = file_name_analysis(filename)
+                year, month = extract_year_and_month(filename)
 
                 if year_to_read == year and month_to_read == month:
 
@@ -84,10 +89,10 @@ class ParseData:
 
 
 def get_dates(year, month):
-    from_date = datetime.datetime.strptime(f'{year}-{month}-{1}', '%Y-%m-%d')
+    from_date = datetime.strptime(f'{year}-{month}-{1}', '%Y-%m-%d')
     start, end = calendar.monthrange(year, month)
 
-    to_date = datetime.datetime.strptime(f'{year}-{month}-{end}', '%Y-%m-%d')
+    to_date = datetime.strptime(f'{year}-{month}-{end}', '%Y-%m-%d')
     return from_date, to_date
 
 
@@ -160,6 +165,7 @@ def handle_file_handling(args, year, month):
     else:
         print("Folder Path not given")
 
+
 def process_statistics_for_flags(args, year, month, statistics_classes):
     parsed_data = handle_file_handling(args, year, month)
     start, end = get_dates(int(year), int(month))
@@ -171,6 +177,7 @@ def process_statistics_for_flags(args, year, month, statistics_classes):
 
     stats = process_statistics(year, month, statistics_instances, parsed_data)
     return stats
+
 
 def main():
 
@@ -203,15 +210,18 @@ def main():
     if args.e:
         year, month = args.e
         statistics_classes = [MaxTempStat, MaxHumidityStat, MinTempStat]
-        stats = process_statistics_for_flags(args, year, month, statistics_classes)
+        stats = process_statistics_for_flags(
+            args, year, month, statistics_classes)
         print(f"Highest temperature: {stats['max_temp']:.2f}C")
         print(f"Lowest temperature: {stats['min_temp']:.2f}C")
         print(f"Maximum humidity: {stats['max_humidity']:.2f}C")
 
     if args.a:
         year, month = args.a
-        statistics_classes = [AverageMaxTempStat, AverageMinTempStat, AverageMeanHumidity]
-        stats = process_statistics_for_flags(args, year, month, statistics_classes)
+        statistics_classes = [AverageMaxTempStat,
+                              AverageMinTempStat, AverageMeanHumidity]
+        stats = process_statistics_for_flags(
+            args, year, month, statistics_classes)
         print(f"Highest average temperature: {stats['average_max_temp']:.2f}C")
         print(f"Lowest average temperature: {stats['average_min_temp']:.2f}C")
         print(f"Average mean humidity: {stats['average_mean_humidity']:.2f}C")
@@ -220,7 +230,8 @@ def main():
         year = args.c
         statistics_classes = [MaxTempStat, MaxHumidityStat, MinTempStat]
         for month in range(1, 13):
-            stats = process_statistics_for_flags(args, year, str(month), statistics_classes)
+            stats = process_statistics_for_flags(
+                args, year, str(month), statistics_classes)
             print(f"For month {month}:")
             print(f"Highest temperature: {stats['max_temp']:.2f}C")
             print(f"Lowest temperature: {stats['min_temp']:.2f}C")
@@ -229,4 +240,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
