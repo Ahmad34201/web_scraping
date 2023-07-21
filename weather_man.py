@@ -48,6 +48,7 @@ class ParseData:
                 file_path = os.path.join(folder_path, filename)
 
                 year, month = file_name_analysis(filename)
+
                 if year_to_read == year and month_to_read == month:
 
                     with open(file_path, 'r') as file:
@@ -159,6 +160,17 @@ def handle_file_handling(args, year, month):
     else:
         print("Folder Path not given")
 
+def process_statistics_for_flags(args, year, month, statistics_classes):
+    parsed_data = handle_file_handling(args, year, month)
+    start, end = get_dates(int(year), int(month))
+
+    # Create the necessary statistics classes
+    preprocessor = RecordPreprocessor()
+    statistics_instances = [cls(start, end) for cls in statistics_classes]
+    statistics_instances.insert(0, preprocessor)
+
+    stats = process_statistics(year, month, statistics_instances, parsed_data)
+    return stats
 
 def main():
 
@@ -188,67 +200,33 @@ def main():
     # Parse the command-line arguments
     args = parser.parse_args()
 
-    # Process the -e flag
     if args.e:
         year, month = args.e
-        parsed_data = handle_file_handling(args, year, month)
-        start, end = get_dates(int(year), int(month))
-        max_humidity = MaxHumidityStat(start, end)
-        max_temp = MaxTempStat(start, end)
-        min_temp = MinTempStat(start, end)
-        preprocessor = RecordPreprocessor()
-        statistics_classes = [preprocessor, max_temp, max_humidity, min_temp]
-        stats = process_statistics(
-            year, month, statistics_classes, parsed_data)
-        print(
-            f"Highest temperature: {stats['max_temp']:.2f}C")
-        print(
-            f"Lowest temperature: {stats['min_temp']:.2f}C")
-        print(
-            f"Maximum humidity: {stats['max_humidity']:.2f}C")
+        statistics_classes = [MaxTempStat, MaxHumidityStat, MinTempStat]
+        stats = process_statistics_for_flags(args, year, month, statistics_classes)
+        print(f"Highest temperature: {stats['max_temp']:.2f}C")
+        print(f"Lowest temperature: {stats['min_temp']:.2f}C")
+        print(f"Maximum humidity: {stats['max_humidity']:.2f}C")
 
-    # Process the -a flag
     if args.a:
         year, month = args.a
-        parsed_data = handle_file_handling(args, year, month)
-        start, end = get_dates(int(year), int(month))
-        avergae_max_temp = AverageMaxTempStat(start, end)
-        avergae_min_temp = AverageMinTempStat(start, end)
-        avergae_mean_humidity = AverageMeanHumidity(start, end)
-        # have to create object of preprocessor
-        preprocessor = RecordPreprocessor()
-        statistics_classes = [preprocessor, avergae_max_temp,
-                              avergae_min_temp, avergae_mean_humidity]
-        stats = process_statistics(
-            year, month, statistics_classes, parsed_data)
-        print(
-            f"Highest average temperature: {stats['average_max_temp']:.2f}C")
-        print(
-            f"Lowest average temperature: {stats['average_min_temp']:.2f}C")
-        print(
-            f"Avergae mean humidity: {stats['average_mean_humidity']:.2f}C")
+        statistics_classes = [AverageMaxTempStat, AverageMinTempStat, AverageMeanHumidity]
+        stats = process_statistics_for_flags(args, year, month, statistics_classes)
+        print(f"Highest average temperature: {stats['average_max_temp']:.2f}C")
+        print(f"Lowest average temperature: {stats['average_min_temp']:.2f}C")
+        print(f"Average mean humidity: {stats['average_mean_humidity']:.2f}C")
 
-    # Process the -c flag
     if args.c:
         year = args.c
-        preprocessor = RecordPreprocessor()
+        statistics_classes = [MaxTempStat, MaxHumidityStat, MinTempStat]
         for month in range(1, 13):
-            parsed_data = handle_file_handling(args, year, str(month))
-            start, end = get_dates(int(year), month)
-            max_humidity = MaxHumidityStat(start, end)
-            max_temp = MaxTempStat(start, end)
-            min_temp = MinTempStat(start, end)
-            statistics_classes = [preprocessor,
-                                  max_temp, max_humidity, min_temp]
-            stats = process_statistics(
-                year, month, statistics_classes, parsed_data)
-        print(
-            f"Highest temperature: {stats['max_temp']:.2f}C")
-        print(
-            f"Lowest temperature: {stats['min_temp']:.2f}C")
-        print(
-            f"Maximum humidity: {stats['max_humidity']:.2f}C")
+            stats = process_statistics_for_flags(args, year, str(month), statistics_classes)
+            print(f"For month {month}:")
+            print(f"Highest temperature: {stats['max_temp']:.2f}C")
+            print(f"Lowest temperature: {stats['min_temp']:.2f}C")
+            print(f"Maximum humidity: {stats['max_humidity']:.2f}C")
 
 
 if __name__ == "__main__":
     main()
+
