@@ -40,8 +40,7 @@ def discover_files(folder_path, extension='txt'):
 def extract_year_and_month(filename):
     # Correct regular expression to find the year (four consecutive digits) and the month abbreviation (three letters) in the filename
     year_month_match = re.search(
-        r"(\d{4}).*?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)", filename)
-
+        r"(\d{4})_([a-zA-Z]{3,})", filename)
     if year_month_match:
         year = year_month_match[1]
         month_abbrev = year_month_match[2]  # Capture the month abbreviation
