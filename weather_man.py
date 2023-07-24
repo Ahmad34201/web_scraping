@@ -59,7 +59,6 @@ class ParseData:
                 year, month = extract_year_and_month(filename)
 
                 if year_to_read == year and month_to_read == month:
-
                     with open(file_path, 'r') as file:
                         reader = csv.DictReader(file, delimiter=',')
 
@@ -67,10 +66,8 @@ class ParseData:
                         next(reader)
 
                         monthly_data = []
-                        year, month = None, None
 
                         for row in reader:
-
                             # Check if the row is blank
                             if not any(row.values()):
                                 continue
@@ -78,19 +75,16 @@ class ParseData:
                             # Retrieve the 'date' value from the row using 'get()' with two possible key names
                             date_value = row.get('PKST') or row.get('PKT')
 
-                            if not year or not month:
-                                if date_value:
-
-                                    datetime_obj = datetime.strptime(
-                                        date_value, "%Y-%m-%d")
-                                    year, month = str(datetime_obj.year), str(
-                                        datetime_obj.month)
+                            if date_value:
+                                datetime_obj = datetime.strptime(date_value, "%Y-%m-%d")
+                                year, month = str(datetime_obj.year), str(datetime_obj.month)
 
                             # Store the row dictionary in monthly_data
                             monthly_data.append(row)
 
                     if year and month:
                         self.weather_reading[year][month] = monthly_data
+
         return self.weather_reading
 
 
