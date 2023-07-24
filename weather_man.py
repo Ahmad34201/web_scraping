@@ -30,16 +30,20 @@ def print_red(text):
 
 
 def extract_year_and_month(filename):
-   # Regular expression to find the year (four consecutive digits) in the filename
-    year_regex = re.search(r"\d{4}", filename)
-    year = year_regex.group() if year_regex else None
+    # regular expression to find the year (four consecutive digits) and the month abbreviation (three letters) in the filename
+    year_month_regex = re.search(
+        r"(\d{4}).*?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)", filename)
 
-    # Regular expression to find the month abbreviation (three letters) in the filename
-    month_regex = re.search(
-        r"(?i)(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)", filename)
-    month = month_to_number(month_regex.group()
-                            ) if month_regex else None
-    return year, month
+    if year_month_regex:
+        year = year_month_regex.group(1)
+        month_abbrev = year_month_regex.group(
+            2)  # Capture the month abbreviation
+
+        month = month_to_number(month_abbrev)
+
+        return year, month
+    else:
+        return None, None
 
 
 class ParseData:
