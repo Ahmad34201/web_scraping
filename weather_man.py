@@ -30,7 +30,7 @@ def print_red(text):
 
 
 def extract_year_and_month(filename):
-    # regular expression to find the year (four consecutive digits) and the month abbreviation (three letters) in the filename
+    # Correct regular expression to find the year (four consecutive digits) and the month abbreviation (three letters) in the filename
     year_month_regex = re.search(
         r"(\d{4}).*?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)", filename)
 
@@ -38,7 +38,7 @@ def extract_year_and_month(filename):
         year = year_month_regex.group(1)
         month_abbrev = year_month_regex.group(
             2)  # Capture the month abbreviation
-
+        # Convert month abbreviation to its numerical representation
         month = month_to_number(month_abbrev)
 
         return year, month
@@ -80,9 +80,11 @@ class ParseData:
 
                             if not year or not month:
                                 if date_value:
-                                    # Extract year and month from the first row
-                                    date_parts = date_value.split('-')
-                                    year, month = date_parts[0], date_parts[1]
+
+                                    datetime_obj = datetime.strptime(
+                                        date_value, "%Y-%m-%d")
+                                    year, month = str(datetime_obj.year), str(
+                                        datetime_obj.month)
 
                             # Store the row dictionary in monthly_data
                             monthly_data.append(row)
@@ -162,12 +164,9 @@ def process_statistics(year, month, statistics_classes, parsed_data):
 
 
 def handle_file_handling(args, year, month):
+    folder_path = args.path
     weather_data = ParseData()
-    if args.path:
-        folder_path = args.path
-        return weather_data.parse_weather_data(folder_path, year, month)
-    else:
-        print("Folder Path not given")
+    return weather_data.parse_weather_data(folder_path, year, month)
 
 
 def process_statistics_for_flags(args, year, month, statistics_classes):
@@ -203,10 +202,9 @@ def main():
                         type=validate_year_month,
                         help="Generate yearly report for a specific year")
 
-    # Add argument for -b flag
-    parser.add_argument("-path", metavar="PATH",
-                        type=str,
-                        help="Folder Path for files")
+    parser.add_argument("-path", metavar="PATH", type=str, required=True,
+                        help="Folder Path for files")  # Making args.path a required parameter
+
 
     # Parse the command-line arguments
     args = parser.parse_args()
