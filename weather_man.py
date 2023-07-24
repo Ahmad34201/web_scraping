@@ -29,15 +29,22 @@ def print_red(text):
     print(f"{RED} {text}{END_COLOR}",  end="")
 
 
+def discover_files(folder_path, extension='txt'):
+    file_list = []
+    for filename in os.listdir(folder_path):
+        if filename.endswith("." + extension):
+            file_list.append(filename)
+    return file_list
+
+
 def extract_year_and_month(filename):
     # Correct regular expression to find the year (four consecutive digits) and the month abbreviation (three letters) in the filename
-    year_month_regex = re.search(
+    year_month_match = re.search(
         r"(\d{4}).*?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)", filename)
 
-    if year_month_regex:
-        year = year_month_regex.group(1)
-        month_abbrev = year_month_regex.group(
-            2)  # Capture the month abbreviation
+    if year_month_match:
+        year = year_month_match[1]
+        month_abbrev = year_month_match[2]  # Capture the month abbreviation
         # Convert month abbreviation to its numerical representation
         month = month_to_number(month_abbrev)
 
@@ -51,39 +58,41 @@ class ParseData:
         self.weather_reading = defaultdict(lambda: defaultdict(dict))
 
     def parse_weather_data(self, folder_path, year_to_read, month_to_read):
-        for filename in os.listdir(folder_path):
-            # Filter files with a specific extension, e.g., .txt
-            if filename.endswith(".txt"):
-                file_path = os.path.join(folder_path, filename)
+        files_to_read = discover_files(folder_path, extension='txt')
 
-                year, month = extract_year_and_month(filename)
+        for filename in files_to_read:
+            file_path = os.path.join(folder_path, filename)
 
-                if year_to_read == year and month_to_read == month:
-                    with open(file_path, 'r') as file:
-                        reader = csv.DictReader(file, delimiter=',')
+            year, month = extract_year_and_month(filename)
 
-                        # Skip the header line
-                        next(reader)
+            if year_to_read == year and month_to_read == month:
+                with open(file_path, 'r') as file:
+                    reader = csv.DictReader(file, delimiter=',')
 
-                        monthly_data = []
+                    # Skip the header line
+                    next(reader)
 
-                        for row in reader:
-                            # Check if the row is blank
-                            if not any(row.values()):
-                                continue
+                    monthly_data = []
 
-                            # Retrieve the 'date' value from the row using 'get()' with two possible key names
-                            date_value = row.get('PKST') or row.get('PKT')
+                    for row in reader:
+                        # Check if the row is blank
+                        if not any(row.values()):
+                            continue
 
-                            if date_value:
-                                datetime_obj = datetime.strptime(date_value, "%Y-%m-%d")
-                                year, month = str(datetime_obj.year), str(datetime_obj.month)
+                        # Retrieve the 'date' value from the row using 'get()' with two possible key names
+                        date_value = row.get('PKST') or row.get('PKT')
 
-                            # Store the row dictionary in monthly_data
-                            monthly_data.append(row)
+                        if date_value:
+                            datetime_obj = datetime.strptime(
+                                date_value, "%Y-%m-%d")
+                            year, month = str(datetime_obj.year), str(
+                                datetime_obj.month)
 
-                    if year and month:
-                        self.weather_reading[year][month] = monthly_data
+                        # Store the row dictionary in monthly_data
+                        monthly_data.append(row)
+
+                if year and month:
+                    self.weather_reading[year][month] = monthly_data
 
         return self.weather_reading
 
@@ -198,7 +207,6 @@ def main():
 
     parser.add_argument("-path", metavar="PATH", type=str, required=True,
                         help="Folder Path for files")  # Making args.path a required parameter
-
 
     # Parse the command-line arguments
     args = parser.parse_args()
