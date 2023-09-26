@@ -37,16 +37,25 @@ class SizeItem(scrapy.Item):
     stock = scrapy.Field()
     price = scrapy.Field()
 
+    @classmethod
+    def create(cls, identifier, producer_size, stock, price):
+        size_item = cls()
+        size_item['identifier'] = identifier
+        size_item['producerSize'] = producer_size
+        size_item['stock'] = stock
+        size_item['price'] = price
+        return size_item
+
 
 class PriceItem(scrapy.Item):
     original = scrapy.Field()
-    discounted = scrapy.Field()
+    final = scrapy.Field()
 
     @classmethod
-    def create(cls, actual, discount):
+    def create(cls, actual, final):
         return cls(
             original=actual,
-            discounted=discount
+            final=final,
         )
 
 

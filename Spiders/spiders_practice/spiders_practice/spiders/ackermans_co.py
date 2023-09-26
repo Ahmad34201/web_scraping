@@ -96,21 +96,44 @@ class AckermanSpider(scrapy.Spider):
                         item = self.de__create_initial_item(
                             response, item_id, item_url)
                         yield item
-                        meta = deepcopy(response.meta)
-                        meta['item'] = item
-                        yield self.de__parse_detail(meta['item'], response_item)
+                        yield from self.de__parse_detail(item, response_item, cat_url)
 
     def de__create_initial_item(self, response, identifier, url):
         categories = response.meta.get('categories', [])
         return ProductItem.create(response, identifier, url, categories)
 
-    def de__parse_detail(self, item, response_item):
+    def de__parse_detail(self, item, response_item, cat_url):
         item['title'] = self.de__get_title(response_item)
         item['description'] = self.de__get_description(response_item)
         item['base_sku'] = self.de__get_base_sku(response_item)
         item['price'] = self.get_price(response_item)
         item['image_urls'] = self.get_image_urls(response_item)
         item['availability'] = self.check_availability(response_item)
+
+        yield scrapy.Request(
+            "https://www.ackermans.co.za/graphql?operationName=products_pdp",
+            callback=self.de__get_sizes,
+            body=self.get_sizes_payload(response_item['url_key']),
+            method="POST",
+            headers=self.get_headers(cat_url=cat_url),
+            meta={'item': item}
+        )
+
+    def de__get_sizes(self, response):
+        sizes = []
+        response_data = json.loads(response.text)
+        if 'data' in response_data:
+            for item in response_data['data']['products']['items']:
+                for variant in item['variants']:
+                    identifier = self.de__get_identifier(variant['product'])
+                    price = self.get_price(variant['product'])
+                    availability = self.check_availability(variant['product'])
+                    size = variant['attributes'][1]['label'].strip()
+                    sizes.append(SizeItem.create(
+                        identifier, size, availability, price))
+        meta = deepcopy(response.meta)
+        item = meta['item']
+        item['sizes'] = sizes
         return item
 
     def de__get_title(self, item):
@@ -122,6 +145,9 @@ class AckermanSpider(scrapy.Spider):
     def de__get_base_sku(self, item):
         return item['sku']
 
+    def de__get_identifier(self, item):
+        return item['id']
+
     def check_availability(self, item):
         status = item['stock_status']
         if status == "IN_STOCK":
@@ -131,9 +157,9 @@ class AckermanSpider(scrapy.Spider):
 
     def get_price(self, item):
         price = item['price_range']['minimum_price']
-        discount_price = price['final_price'].get('value', '')
         actual_price = price['regular_price'].get('value', '')
-        return PriceItem.create(actual_price, discount_price)
+        final_price = price['final_price'].get('value', '')
+        return PriceItem.create(actual_price, final_price)
 
     def get_image_urls(self, item):
         images = []
@@ -199,3 +225,13 @@ class AckermanSpider(scrapy.Spider):
             "query": "query wpPages($facade_url_tree: String, $status: String, $page: String, $per_page: String, $facade_parent_include_level: Int, $include: String) {\n  wpPages(\n    facade_url_tree: $facade_url_tree\n    status: $status\n    page: $page\n    per_page: $per_page\n    facade_parent_include_level: $facade_parent_include_level\n    include: $include\n  ) {\n    total\n    totalPages\n    items {\n      id\n      title {\n        rendered\n        __typename\n      }\n      slug\n      parent\n      link\n      template\n      acf\n      __typename\n    }\n    __typename\n  }\n}\n"
         })
         return page_nums_payload
+
+    def get_sizes_payload(self, url_key):
+        payload = json.dumps({
+            "operationName": "products_pdp",
+            "variables": {
+                "urlKey": url_key
+            },
+            "query": "query products_pdp($urlKey: String) {\n  products(filter: {url_key: {eq: $urlKey}}) {\n    items {\n      __typename\n      id\n      sku\n      name\n      description {\n        html\n        __typename\n      }\n      price_range {\n        minimum_price {\n          ...AllPriceFields\n          __typename\n        }\n        __typename\n      }\n      url_key\n      meta_title\n      meta_description\n      stock_status\n      product_attribute\n      product_decal\n      categories {\n        id\n        name\n        url_path\n        __typename\n      }\n      related_products {\n        sku\n        __typename\n      }\n      media_gallery {\n        file_name\n        label\n        position\n        disabled\n        __typename\n      }\n      size_guide\n      washcare_guide\n      manufacturer\n      product_attribute\n      product_decal\n      colour\n      gender\n      pim_product_category\n      pim_size_guide\n      pim_wash_care_guide\n      primarycolour\n      productsize\n      sizesortseq\n      ... on ConfigurableProduct {\n        variants {\n          product {\n            id\n            sku\n            price_range {\n              minimum_price {\n                ...AllPriceFields\n                __typename\n              }\n              __typename\n            }\n            stock_status\n            sizesortseq\n            __typename\n          }\n          attributes {\n            label\n            code\n            value_index\n            uid\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n    }\n    __typename\n  }\n}\n\nfragment AllPriceFields on ProductPrice {\n  discount {\n    ...ProductDiscountFields\n    __typename\n  }\n  final_price {\n    ...MoneyFields\n    __typename\n  }\n  regular_price {\n    ...MoneyFields\n    __typename\n  }\n  __typename\n}\n\nfragment ProductDiscountFields on ProductDiscount {\n  amount_off\n  percent_off\n  __typename\n}\n\nfragment MoneyFields on Money {\n  value\n  __typename\n}\n"
+        })
+        return payload
