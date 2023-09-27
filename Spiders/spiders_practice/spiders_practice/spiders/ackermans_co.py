@@ -33,20 +33,17 @@ class AckermanSpider(scrapy.Spider):
                     response.url, cat1.get('url_key', ''))
                 yield from self.de__make_navigation_request(response, [cat1], level1_cat_url, cat1)
 
-                if 'children' in cat1:
-                    for cat2 in cat1['children']:
-                        level2_cat_url = f"{level1_cat_url}/{cat2.get('url_key', '')}"
-                        yield from self.de__make_navigation_request(response, [cat1, cat2], level2_cat_url, cat2)
+                for cat2 in cat1['children']:
+                    level2_cat_url = f"{level1_cat_url}/{cat2.get('url_key', '')}"
+                    yield from self.de__make_navigation_request(response, [cat1, cat2], level2_cat_url, cat2)
 
-                        if 'children' in cat2:
-                            for cat3 in cat2['children']:
-                                level3_cat_url = f"{level2_cat_url}/{cat3.get('url_key', '')}"
-                                yield from self.de__make_navigation_request(response, [cat1, cat2, cat3], level3_cat_url, cat3)
+                    for cat3 in cat2['children']:
+                        level3_cat_url = f"{level2_cat_url}/{cat3.get('url_key', '')}"
+                        yield from self.de__make_navigation_request(response, [cat1, cat2, cat3], level3_cat_url, cat3)
 
-                                if 'children' in cat3:
-                                    for cat4 in cat3['children']:
-                                        level4_cat_url = f"{level3_cat_url}/{cat4.get('url_key', '')}"
-                                        yield from self.de__make_navigation_request(response, [cat1, cat2, cat3, cat4], level4_cat_url, cat4)
+                        for cat4 in cat3['children']:
+                            level4_cat_url = f"{level3_cat_url}/{cat4.get('url_key', '')}"
+                            yield from self.de__make_navigation_request(response, [cat1, cat2, cat3, cat4], level4_cat_url, cat4)
 
     def de__make_navigation_request(self, response, parent_categories, cat_url, category):
         if not category:
