@@ -1,10 +1,9 @@
-import scrapy
-from ..items import ProductItem, SizeItem, PriceItem, ProductLoader
-from ..utils import *
 import json
+import scrapy
 from scrapy.loader import ItemLoader
 from copy import deepcopy
-import json
+from ..items import ProductItem, SizeItem, PriceItem, ProductLoader
+from ..utils import *
 
 
 class AckermanSpider(scrapy.Spider):
@@ -28,47 +27,39 @@ class AckermanSpider(scrapy.Spider):
     def de__parse_top_cats(self, response):
         json_data = self.extract_json_data(response)
         if json_data:
-            l1_cat = json_data.get('categories', [])[0]
-            for cat1 in l1_cat.get('children', []):
-                l1_cat_name, l1_cat_url_key, l1_cat_id = cat1.get(
-                    'name', ''), cat1.get('url_key', ''), cat1.get('id', '')
-                l1_cat_url = self.generate_l1_cat_url(
-                    response.url, l1_cat_url_key)
-                yield from self.de__make_navigation_request(response, [l1_cat_name], l1_cat_url, l1_cat_id)
+            level1_cat = json_data.get('categories', [])[0]
+            for cat1 in level1_cat.get('children', []):
+                level1_cat_url = self.generate_level1_cat_url(
+                    response.url, cat1.get('url_key', ''))
+                yield from self.de__make_navigation_request(response, [cat1], level1_cat_url, cat1)
 
                 if 'children' in cat1:
                     for cat2 in cat1['children']:
-                        l2_cat_name, l2_cat_url_key, l2_cat_id = cat2.get(
-                            'name', ''), cat2.get('url_key', ''), cat2.get('id', '')
-                        l2_cat_url = f"{l1_cat_url}/{l2_cat_url_key}"
-                        yield from self.de__make_navigation_request(response, [l1_cat_name, l2_cat_name], l2_cat_url, l2_cat_id)
+                        level2_cat_url = f"{level1_cat_url}/{cat2.get('url_key', '')}"
+                        yield from self.de__make_navigation_request(response, [cat1, cat2], level2_cat_url, cat2)
 
                         if 'children' in cat2:
                             for cat3 in cat2['children']:
-                                l3_cat_name, l3_cat_url_key, l3_cat_id = cat3.get(
-                                    'name', ''), cat3.get('url_key', ''), cat3.get('id', '')
-                                l3_cat_url = f"{l2_cat_url}/{l3_cat_url_key}"
-                                yield from self.de__make_navigation_request(response, [l1_cat_name, l2_cat_name, l3_cat_name], l3_cat_url, l3_cat_id)
+                                level3_cat_url = f"{level2_cat_url}/{cat3.get('url_key', '')}"
+                                yield from self.de__make_navigation_request(response, [cat1, cat2, cat3], level3_cat_url, cat3)
 
                                 if 'children' in cat3:
                                     for cat4 in cat3['children']:
-                                        l4_cat_name, l4_cat_url_key, l4_cat_id = cat4.get(
-                                            'name', ''), cat4.get('url_key', ''), cat4.get('id', '')
-                                        l4_cat_url = f"{l3_cat_url}/{l4_cat_url_key}"
-                                        yield from self.de__make_navigation_request(response, [l1_cat_name, l2_cat_name, l3_cat_name, l4_cat_name], l4_cat_url, l4_cat_id)
+                                        level4_cat_url = f"{level3_cat_url}/{cat4.get('url_key', '')}"
+                                        yield from self.de__make_navigation_request(response, [cat1, cat2, cat3, cat4], level4_cat_url, cat4)
 
-    def de__make_navigation_request(self, response, categories, cat_url, cat_id):
-        if not cat_url:
+    def de__make_navigation_request(self, response, parent_categories, cat_url, category):
+        if not category:
             return
+
         meta = deepcopy(response.meta)
-        meta['categories'] = categories
         meta['cat_url'] = cat_url
-        meta['cat_id'] = cat_id
-        category_url = '/'.join(categories)
-        url = f'ack/products/{category_url}'
+        meta['cat_id'] = category.get('id','')
+        meta['categories'] = [cat.get('name','') for cat in parent_categories]
+        category_url = f"ack/products/{'/'.join(meta['categories'])}"
         PAGE_NUM_API = "https://www.ackermans.co.za/graphql?operationName=wpPages"
         yield scrapy.Request(PAGE_NUM_API, callback=self.de_make_pagination,
-                             body=self.get_pages_payload(cat_url=url), method="POST", meta=meta,
+                             body=self.get_pages_payload(cat_url=category_url), method="POST", meta=meta,
                              headers=self.get_headers(cat_url=meta['cat_url']))
 
     def de_make_pagination(self, response):
@@ -150,10 +141,7 @@ class AckermanSpider(scrapy.Spider):
 
     def check_availability(self, item):
         status = item['stock_status']
-        if status == "IN_STOCK":
-            return 1
-        else:
-            return 0
+        return 1 if status == "IN_STOCK" else 0
 
     def get_price(self, item):
         price = item['price_range']['minimum_price']
@@ -162,12 +150,10 @@ class AckermanSpider(scrapy.Spider):
         return PriceItem.create(actual_price, final_price)
 
     def get_image_urls(self, item):
-        images = []
-        for image in item['media_gallery']:
-            filepath = image['file_name']
-            images.append(
-                f'https://www.ackermans.co.za/imagekit/olyekz3oue/prod-ack-product-images/{filepath}.png?tr=w-1100,h-auto,bg-FFFFFF,f-webp,dpr-1')
-        return images
+        return [
+            f'https://www.ackermans.co.za/imagekit/olyekz3oue/prod-ack-product-images/{image["file_name"]}.png?tr=w-1100,h-auto,bg-FFFFFF,f-webp,dpr-1'
+            for image in item['media_gallery']
+        ]
 
     def extract_json_data(self, response):
         pattern = r'handleStartupData\((.*?)\)'
@@ -183,8 +169,8 @@ class AckermanSpider(scrapy.Spider):
             self.logger.error("No JSON data found in the response text")
             return None
 
-    def generate_l1_cat_url(self, base_url, l1_cat_url_key):
-        return urljoin(base_url, urljoin("/products/", l1_cat_url_key))
+    def generate_level1_cat_url(self, base_url, level1_cat_url_key):
+        return urljoin(base_url, urljoin("/products/", level1_cat_url_key))
 
     def get_payload(self, page_num, cat_id):
         payload = json.dumps({
