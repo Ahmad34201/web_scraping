@@ -10,7 +10,7 @@ import json
 class clarkSpider(scrapy.Spider):
     de__countries_info = [
         # ('country', 'currency', 'language', 'url')
-        ('gb', 'GBP', 'en', "https://www.clarkscanada.com/"),
+        ('gb', 'GBP', 'en', "https://www.clarks.com/en-ca"),
     ]
     name = 'clarks_canada'
 
@@ -26,12 +26,12 @@ class clarkSpider(scrapy.Spider):
             yield scrapy.Request(country_url, self.de__parse_top_cats, meta=meta)
 
     def de__parse_top_cats(self, response):
-        # class="header__dropdown-menu header__dropdown-menu-2"
-        for level1 in response.xpath('//li[@class="header__dropdown-menu-container"]'):
+        for level1 in response.xpath('//div[@class="r2d2-sub-nav"]'):
             yield self.de__make_navigation_request(response, [level1])
-
-            for level2 in level1.xpath('//ul[@class="hasFeaturedImg"]/li'):
+            
+            for level2 in level1.xpath('//ul/li[@class="r2d2-nav-list_item"]'):
                 yield self.de__make_navigation_request(response, [level1, level2])
+                
 
     def de__make_navigation_request(self, response, selectors):
         categories = [sel.css('a::text').get('').strip() for sel in selectors]
