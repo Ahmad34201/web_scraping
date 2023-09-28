@@ -1,7 +1,7 @@
 import json
+from copy import deepcopy
 import scrapy
 from scrapy.loader import ItemLoader
-from copy import deepcopy
 from ..items import ProductItem, SizeItem, PriceItem, ProductLoader
 from ..utils import *
 
