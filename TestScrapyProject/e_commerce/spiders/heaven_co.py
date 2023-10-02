@@ -12,7 +12,7 @@ class clarkSpider(Spider):
         # ('country', 'currency', 'language', 'url')
         ('gb', 'GBP', 'en', "https://www.clarks.com/en-ca"),
     ]
-    name = 'clarks_canada'
+    name = 'heaven'
 
     def start_requests(self):
         for country_code, currency, language, country_url in self.de__countries_info:

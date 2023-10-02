@@ -42,9 +42,7 @@ class clarkSpider(Spider):
         meta = deepcopy(response.meta)
         meta['categories'] = categories
         meta['cat_url'] = urljoin(response.url, cat_url)
-        # have to pass meta['cat_url']
-        test_url = "https://www.clarks.com/en-ca/all-mens-styles/mens-comfort-styles/m_comfort_ca-c"
-        yield Request(test_url, callback=self.de_make_pagination, meta=meta)
+        yield Request(meta['cat_url'], callback=self.de_make_pagination, meta=meta)
 
     def de_make_pagination(self, response):
         page_num_text = response.css(".sc-b9de3f21-5::text").get()
@@ -65,24 +63,34 @@ class clarkSpider(Spider):
 
     def de__parse_products(self, response):
         for product in response.css('.sc-e188e0db-1'):
-            item = self.de__create_initial_item(response, product)
+            mini_item = self.de__create_initial_item(response, product)
+            yield mini_item
             meta = deepcopy(response.meta)
-            meta['item'] = item
-            # meta['response_validation_func'] = self.validate_detail
-            # yield Request(item['url'], self.de__parse_detail, meta=meta)
-            break
-    
+            meta['item'] = mini_item
+            yield Request(mini_item['url'], self.de__parse_detail, meta=meta)
+
     def de__create_initial_item(self, response, product):
-        item_url = product.css('a::attrib(href)').get('')
+        item_url = urljoin(response.url, product.css('a::attr(href)').get(''))
         categories = response.meta.get('categories', [])
-        print("url ", item_url)
-        print("cat", categories)
-        print("identifier", product.css('::attrib(id)').get(''))
         return ProductItem(
-            identifier=product.css('attrib(id)'),
+            identifier=product.css('[id]::attr(id)').get(''),
             url=item_url,
             category_names=categories,
             country_code=response.meta.get('country_code', ''),
             language_code=response.meta.get('language_code', ''),
             currency=response.meta.get('currency', '')
         )
+
+    def de__parse_detail(self, response):
+        item = response.meta.get('item')
+        item['title'] = response.css('.sc-29d6aa1f-0::text').get()
+        item['description'] = response.css('.sc-afae01d3-3::text').get()
+        # item['base_sku'] = response_item['sku']
+        item['price'] = response.css('.sc-a1167b0b-1::text').get()
+        item['image_urls'] = self.de__get_image_urls(response)
+        # item['availability'] = self.check_availability(response_item)
+        item['sizes'] = response.css('.sc-36535bff-2::text').getall()
+        return item
+
+    def de__get_image_urls(self, response):
+        return response.xpath('//div[contains(@class, "sc-a99bb818-3")]/span/img/@src').getall()

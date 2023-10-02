@@ -16,7 +16,7 @@ NEWSPIDER_MODULE = "e_commerce.spiders"
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "e_commerce (+http://www.yourdomain.com)"
 
-WARNING = "WARNING"
+LOG_LEVEL = 'WARNING'
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
 
