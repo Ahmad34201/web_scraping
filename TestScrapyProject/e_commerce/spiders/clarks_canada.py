@@ -59,7 +59,7 @@ class ClarkSpider(scrapy.Spider):
     def parse_products(self, response):
         for product in response.css('.sc-e188e0db-1'):
             mini_item = self.create_initial_item(response, product)
-            # yield mini_item
+            yield mini_item
             meta = deepcopy(response.meta)
             meta['item'] = mini_item
             yield scrapy.Request(mini_item['url'], self.parse_colors, meta=meta)
