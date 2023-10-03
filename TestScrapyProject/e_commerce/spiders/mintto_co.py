@@ -10,18 +10,7 @@ from w3lib.url import add_or_replace_parameter
 class MinttoSpider(scrapy.Spider):
     de__countries_info = [
         # ('country', 'currency', 'language', 'url')
-        # ('fi', 'EUR', 'fi', 'https://www.miinto.fi/brands'),
-        # ('dk', 'DKK', 'da', 'https://www.miinto.dk/brands'),
-        # ('de', 'EUR', 'de', 'https://www.miinto.de/brands'),
-        # ('nl', 'EUR', 'nl', 'https://www.miinto.nl/brands'),
-        # ('no', 'NOK', 'no', 'https://www.miinto.no/brands'),
-        # ('se', 'SEK', 'sv', 'https://www.miinto.se/brands'),
-        # ('be', 'EUR', 'be', 'https://www.miinto.be/brands'),
-        # ('ch', 'CHF', 'de', 'https://www.miinto.ch/brands'),
-        # ('fr', 'EUR', 'fr', 'https://www.miinto.fr/brands'),
         ('gb', 'GBP', 'en', 'https://www.miinto.co.uk'),
-        # ('it', 'EUR', 'it', 'https://www.miinto.it/brands'),
-        # ('pl', 'PLN', 'pl', 'https://www.showroom.pl/brands'),
     ]
     name = 'mintto_co'
     total_pages = 0
@@ -127,64 +116,4 @@ class MinttoSpider(scrapy.Spider):
 
         print("Spider closed:", reason)
 
-    # def parse_detailed_page(self, response):
-    #     # Extract product URLs and initiate parsing
-    #     all_products = response.css('a.c-dvHMYx::attr(href)').getall()
-    #     for url in all_products:
-    #         yield scrapy.Request(urljoin(response.url, url), callback=self.parse_product)
-
-    # def parse_product(self, response):
-    #     loader = ProductLoader(item=ProductItem(), response=response)
-    #     loader.add_value('product_url', extract_product_url(response))
-    #     item = self.get_item(response)
-    #     self.load_product_data(loader, item)
-    #     yield loader.load_item()
-
-    # def get_item(self, response):
-    #     script_text = response.xpath(
-    #         '//script[contains(., "window.__PDP_PRELOADED_STATE__")]/text()').get()
-    #     if script_text:
-    #         json_start = script_text.find('JSON.stringify(')
-    #         json_end = script_text.find(');', json_start)
-    #         if json_start != -1 and json_end != -1:
-    #             json_string = script_text[json_start +
-    #                                       len('JSON.stringify('):json_end]
-    #             try:
-    #                 item_data = json.loads(json_string)
-    #                 return item_data['product']
-    #             except json.JSONDecodeError as e:
-    #                 self.logger.error(f"JSON decoding error: {e}")
-    #     return {}
-
-    # def load_product_data(self, loader, item):
-    #     loader.add_value('brand', item.get('brand'))
-    #     loader.add_value('title', item.get('title'))
-    #     loader.add_value('color', item.get('productColor'))
-    #     self.load_price(loader, item)
-    #     self.load_sizes(loader, item)
-    #     loader.add_value('image_urls', self.extract_image_urls(item))
-    #     loader.add_value('description', item.get('description'))
-    #     loader.add_value('categories', item.get('categoryId'))
-
-    # def load_price(self, loader, item):
-    #     price_item = PriceItem()
-    #     price_item['original'] = item['price']['originalPrice']
-    #     price_item['discounted'] = item['price']['price']
-    #     loader.add_value('price', price_item)
-
-    # def extract_image_urls(self, item):
-    #     images = item.get('images', [])
-    #     return [image.get("url") for image in images]
-
-    # def load_sizes(self, loader, item):
-    #     sizes = item.get('sizes', [])
-    #     size_items = []
-    #     for size in sizes:
-    #         size_item = SizeItem()
-    #         size_item['identifier'] = size.get('miintoId')
-    #         size_item['producerSize'] = size.get('producerSize')
-    #         size_item['marketSize'] = size.get('marketSize')
-    #         size_item['stock'] = size.get('isLastItem')
-    #         size_item['price'] = size.get('price')
-    #         size_items.append(size_item)
-    #     loader.add_value('sizes', size_items)
+    
