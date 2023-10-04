@@ -3,19 +3,22 @@ from copy import deepcopy
 import re
 from urllib.parse import urljoin
 
-import scrapy
+from scrapy import Request, Spider
 
 from ..items import ProductItem
 
 
-class ClarkSpider(scrapy.Spider):
+class ClarkSpider(Spider):
     name = 'clarks_canada'
 
     countries_info = [
         # ('country', 'currency', 'language', 'url')
-        ('gb', 'GBP', 'en', "https://www.clarks.com/en-ca"),
+        ('ca', 'CAD', 'en', "https://www.clarks.com/en-ca"),
     ]
-
+    
+    COLORS_REGEX = re.compile(r'colours? available:\s*([A-Za-z]+)', re.IGNORECASE)
+    PAGE_NUM_REGEX = re.compile(r'\d+')
+    
     def start_requests(self):
         for country_code, currency, language, country_url in self.countries_info:
             meta = {
@@ -23,7 +26,7 @@ class ClarkSpider(scrapy.Spider):
                 'currency': currency,
                 'country_code': country_code,
             }
-            yield scrapy.Request(country_url, self.parse_top_categories, meta=meta)
+            yield Request(country_url, self.parse_top_categories, meta=meta)
 
     def parse_top_categories(self, response):
         for level1 in response.css(".r2d2-sub-nav"):
@@ -41,16 +44,16 @@ class ClarkSpider(scrapy.Spider):
         meta = deepcopy(response.meta)
         meta['categories'] = categories
         meta['cat_url'] = urljoin(response.url, cat_url)
-        yield scrapy.Request(meta['cat_url'], callback=self.make_pagination, meta=meta)
+        yield Request(meta['cat_url'], callback=self.make_pagination, meta=meta)
 
     def make_pagination(self, response):
         page_num_text = response.css(".sc-b9de3f21-5::text").get()
         last_page = self.get_last_page(page_num_text)
         paginated_url = f'{response.url}?page={last_page}'
-        yield scrapy.Request(paginated_url, callback=self.parse_products, meta=response.meta)
+        yield Request(paginated_url, callback=self.parse_products, meta=response.meta)
 
     def get_last_page(self, page_num_text):
-        numbers = re.findall(r'\d+', page_num_text)
+        numbers = self.PAGE_NUM_REGEX.findall(page_num_text)
         if len(numbers) >= 2:
             total_pages = int(numbers[1])
             return (total_pages + 71) // 72
@@ -62,7 +65,7 @@ class ClarkSpider(scrapy.Spider):
             yield mini_item
             meta = deepcopy(response.meta)
             meta['item'] = mini_item
-            yield scrapy.Request(mini_item['url'], self.parse_colors, meta=meta)
+            yield Request(mini_item['url'], self.parse_colors, meta=meta)
 
     def create_initial_item(self, response, product):
         item_url = urljoin(response.url, product.css('a::attr(href)').get(''))
@@ -81,7 +84,7 @@ class ClarkSpider(scrapy.Spider):
         colored_items = response.css('.sc-44900a7b-0>a::attr(href)').getall()
         for color_url in colored_items:
             url_to_parse = urljoin(response.url, color_url)
-            yield scrapy.Request(url_to_parse, self.parse_detail, meta=meta)
+            yield Request(url_to_parse, self.parse_detail, meta=meta)
 
     def parse_detail(self, response):
         item = response.meta.get('item')
@@ -109,8 +112,7 @@ class ClarkSpider(scrapy.Spider):
 
     def get_color(self, response):
         color_availability_text = response.css('.sc-95ff6051-2::text').get()
-        color_name = re.search(
-            r'colours? available:\s*([A-Za-z]+)', color_availability_text, re.IGNORECASE)
+        color_name = self.COLORS_REGEX.search(color_availability_text)
         return color_name.group(1) if color_name else ''
 
     @staticmethod
