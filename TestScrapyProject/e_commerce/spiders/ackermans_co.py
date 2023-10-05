@@ -32,21 +32,21 @@ class AckermanSpider(Spider):
         if json_data:
             level1_cat = json_data.get('categories', [])[0]
             for cat1 in level1_cat.get('children', []):
-                level1_cat_url = self.generate_level1_cat_url(
+                cat1_url = self.generate_level1_cat_url(
                     response.url, cat1.get('url_key', ''))
-                yield from self.de__make_navigation_request(response, [], level1_cat_url, cat1)
+                yield from self.de__make_navigation_request(response, [], cat1_url, cat1)
 
                 for cat2 in cat1['children']:
-                    level2_cat_url = f"{level1_cat_url}/{cat2.get('url_key', '')}"
-                    yield from self.de__make_navigation_request(response, [cat1], level2_cat_url, cat2)
+                    cat2_url = f"{cat1_url}/{cat2.get('url_key', '')}"
+                    yield from self.de__make_navigation_request(response, [cat1], cat2_url, cat2)
 
                     for cat3 in cat2['children']:
-                        level3_cat_url = f"{level2_cat_url}/{cat3.get('url_key', '')}"
-                        yield from self.de__make_navigation_request(response, [cat1, cat2], level3_cat_url, cat3)
+                        cat3_url = f"{cat2_url}/{cat3.get('url_key', '')}"
+                        yield from self.de__make_navigation_request(response, [cat1, cat2], cat3_url, cat3)
 
                         for cat4 in cat3['children']:
-                            level4_cat_url = f"{level3_cat_url}/{cat4.get('url_key', '')}"
-                            yield from self.de__make_navigation_request(response, [cat1, cat2, cat3], level4_cat_url, cat4)
+                            cat4_url = f"{cat3_url}/{cat4.get('url_key', '')}"
+                            yield from self.de__make_navigation_request(response, [cat1, cat2, cat3], cat4_url, cat4)
 
     def de__make_navigation_request(self, response, parent_categories, cat_url, current_category):
         if not current_category:

@@ -13,6 +13,7 @@ class ProductItem(scrapy.Item):
     currency = scrapy.Field()
     price = scrapy.Field()
     image_urls = scrapy.Field()
+    referer_url = scrapy.Field()
     description = scrapy.Field()
     color = scrapy.Field()
     sizes = scrapy.Field()
