@@ -1,10 +1,11 @@
 import re
+import json
 from copy import deepcopy
 from urllib.parse import urljoin
 
 from scrapy import Request, Spider
 
-from ..items import ProductItem
+from ..items import ProductItem, SizeItem
 
 
 class SelectedSpider(Spider):
@@ -25,8 +26,16 @@ class SelectedSpider(Spider):
             yield Request(country_url, self.parse_top_categories, meta=meta)
 
     def parse_top_categories(self, response):
-        for level1 in response.css('.menu-burger__category--root p'):
+        for level1 in response.xpath('//div[contains(@class, "menu-burger__category--root")]/p'):
+            level1_subcat = self.parse_subcat(response, level1)
             yield from self.make_navigation_request(response, [level1])
+
+            for level2 in level1_subcat.xpath('p[contains(@class, "category-level-2")]'):
+                level2_subcat = self.parse_subcat(response, level2)
+                yield from self.make_navigation_request(response, [level1, level2])
+
+                for level3 in level2_subcat.xpath('p[contains(@class, "category-level-3")]'):
+                    yield from self.make_navigation_request(response, [level1, level2, level3])
 
     def make_navigation_request(self, response, selectors):
         cat_url = selectors[-1].css('a::attr(href)').get()
@@ -85,12 +94,35 @@ class SelectedSpider(Spider):
             'identifier': response.css('.js-product-id::text').get(),
             'color': self.get_color(item.get('identifier', '')),
             'base_sku': self.get_base_sku(item.get('identifier', '')),
-            'price':response.css('.price .value::text').get(),
+            'price': response.css('.price .value::text').get(),
             'description': response.css('.product-content__text::text').get(),
             'image_urls': response.css('.zoom-handler__image::attr(href)').getall(),
         })
 
         return item
+
+    def parse_sizes_from_buttons(self, response):
+        button_urls = response.css('.product-attribute__button--nonswatch::attr("data-url")').getall()
+        first_valid_url = next((url for url in button_urls if url), None)
+        if first_valid_url:
+            yield Request(first_valid_url, callback=self.create_size_item)
+
+    def create_size_item(self, response):
+        data = json.loads(response.body)
+        product = data.get('product', {})
+        attributes = product.get('variationAttributes', [])
+
+        sizes = [
+            SizeItem(
+                identifier=size['id'],
+                producerSize=size['value'],
+                stock=size['orderable']
+            )
+            for attribute in attributes if attribute.get('attributeId') == 'size'
+            for size in attribute.get('values', [])
+        ]
+
+        print(sizes)
 
     @staticmethod
     def get_color(identifier):
