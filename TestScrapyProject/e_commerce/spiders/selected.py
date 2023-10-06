@@ -49,14 +49,13 @@ class SelectedSpider(Spider):
                      'cat_url': urljoin(
                          response.url, cat_url), 'cat_id': cat_id
                      })
-        self.total_pages = 0
-        yield Request(f'{self.PAGINATION_API}{cat_id}&start=0&sz=60', callback=self.make_pagination, meta=meta)
+        yield Request(f'{self.PAGINATION_API}{cat_id}&start=0&sz=60', callback=self.parse_pagination, meta=meta)
 
-    def make_pagination(self, response):
-        self.parse_total_pages(response)
+    def parse_pagination(self, response):
+        total_pages = self.parse_total_pages(response)
         meta = response.meta.copy()
         cat_id = meta['cat_id']
-        for start in range(0, self.total_pages, 60):
+        for start in range(0, total_pages, 60):
             yield Request(f'{self.PAGINATION_API}{cat_id}&start={start}&sz=60', callback=self.parse_products, meta=meta)
 
     def parse_products(self, response):
@@ -152,5 +151,4 @@ class SelectedSpider(Spider):
     def parse_total_pages(self, response):
         page_text = response.css('.product-grid-paging__message::text').get()
         if page_text:
-            self.total_pages = int(
-                self.PAGE_TEXT_PATTERN.findall(page_text)[1])
+            return int(self.PAGE_TEXT_PATTERN.findall(page_text)[1])
