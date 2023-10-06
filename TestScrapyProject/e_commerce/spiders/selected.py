@@ -62,6 +62,7 @@ class SelectedSpider(Spider):
     def parse_products(self, response):
         for product in response.css('.product-grid-item'):
             item = self.create_product_item(response, product)
+            yield item
             yield Request(item['url'], self.parse_colors, meta={'item': item, 'text_to_replace': product.attrib['data-id']})
 
     def create_product_item(self, response, sel_prod):
@@ -89,40 +90,52 @@ class SelectedSpider(Spider):
 
     def parse_detail(self, response):
         item = response.meta['item']
+        identifier = response.css('.js-product-id::text').get()
         item.update({
             'title': response.css('.product-header__name::text').get(),
-            'identifier': response.css('.js-product-id::text').get(),
-            'color': self.get_color(item.get('identifier', '')),
-            'base_sku': self.get_base_sku(item.get('identifier', '')),
+            'identifier': identifier,
+            'color': self.get_color(identifier),
+            'base_sku': self.get_base_sku(identifier),
             'price': response.css('.price .value::text').get(),
             'description': response.css('.product-content__text::text').get(),
-            'image_urls': response.css('.zoom-handler__image::attr(href)').getall(),
         })
 
-        return item
+        yield from self.parse_sizes(response, item)
 
-    def parse_sizes_from_buttons(self, response):
-        button_urls = response.css('.product-attribute__button--nonswatch::attr("data-url")').getall()
+    def parse_sizes(self, response, item):
+        button_urls = response.css(
+            '.product-attribute__button--nonswatch::attr("data-url")').getall()
         first_valid_url = next((url for url in button_urls if url), None)
         if first_valid_url:
-            yield Request(first_valid_url, callback=self.create_size_item)
+            yield Request(first_valid_url, callback=self.create_size_item, meta={'item': item})
 
     def create_size_item(self, response):
+        meta = deepcopy(response.meta)
+        item = meta['item']
         data = json.loads(response.body)
         product = data.get('product', {})
         attributes = product.get('variationAttributes', [])
 
+        image_urls = self.extract_image_urls(product)
         sizes = [
             SizeItem(
                 identifier=size['id'],
                 producerSize=size['value'],
-                stock=size['orderable']
+                stock=size['orderable'],
             )
             for attribute in attributes if attribute.get('attributeId') == 'size'
             for size in attribute.get('values', [])
         ]
 
-        print(sizes)
+        item['sizes'] = sizes
+        item['image_urls'] = image_urls
+        return item
+
+    def extract_image_urls(self, product):
+        images = product.get('images', {})
+        image_urls = {size_key: [url_dict['url'] for url_dict in urls]
+                      for size_key, urls in images.items()}
+        return image_urls
 
     @staticmethod
     def get_color(identifier):
