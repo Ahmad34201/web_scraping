@@ -1,5 +1,5 @@
 import re
-import json
+import hashlib
 from copy import deepcopy
 from urllib.parse import urljoin
 
@@ -11,6 +11,7 @@ from ..items import ProductItem, SizeItem
 class RiverSpider(Spider):
     name = 'river'
     PAGE_NUM_REGEX = re.compile(r'\b(\d+)\b')
+    COLOR_PATTERN = re.compile(r'/p/([a-zA-Z-]+)-\d+')
     countries_info = [
         ('gb', 'GBP', 'en', "https://www.riverisland.com/")]
 
@@ -55,23 +56,50 @@ class RiverSpider(Spider):
                      'cat_url': urljoin(
                          response.url, cat_url)
                      })
-
-        yield Request('https://www.riverisland.com/c/women/coats-and-jackets', callback=self.parse_pagination, meta=meta)
+        yield Request(meta['cat_url'], callback=self.parse_pagination, meta=meta)
 
     def parse_pagination(self, response):
         page_num_txt = response.css('div[data-qa="product-count"]::text').get()
-        last_page = self.get_last_page(page_num_txt)
-        for current_page in range(1, last_page+1):
-            paginated_url = f'{response.url}?pg={current_page}'
-            yield Request(paginated_url, callback=self.parse_products, meta=response.meta)
-    
+        if page_num_txt:
+            last_page = self.get_last_page(page_num_txt)
+            for current_page in range(1, last_page+1):
+                paginated_url = f'{response.url}?pg={current_page}'
+                yield Request(paginated_url, callback=self.parse_products, meta=response.meta)
+
     def parse_products(self, response):
         for product in response.css('a.card___366wY'):
             mini_item = self.create_initial_item(response, product)
             yield mini_item
             meta = deepcopy(response.meta)
             meta['item'] = mini_item
-    
+            available_colors = product.css(
+                'li.swatch___XcHT_ div>img::attr(alt)').getall()
+            meta['colors'] = available_colors
+
+            yield Request(mini_item['url'], self.parse_colors, meta=meta)
+
+    def parse_colors(self, response):
+        available_colors = response.meta.get('colors', '')
+        color_urls = response.css(
+            '.product-swatches__list__usW6D a::attr(href)').getall()
+
+        color_url_mapping = self.color_to_url_mapping(
+            available_colors, color_urls)
+
+        for color, urls in color_url_mapping.items():
+            for url in urls:
+                meta = deepcopy(response.meta)
+                meta['item']['color'] = color
+                url_to_parse = f'https://www.riverisland.com{url}'
+                yield Request(url_to_parse, self.parse_detail, meta=meta)
+
+    def color_to_url_mapping(self, available_colors, color_urls):
+        color_url_mapping = {}
+        for color in available_colors:
+            color_url_mapping[color] = [
+                url for url in color_urls if color.lower() in url.lower()]
+        return color_url_mapping
+
     def create_initial_item(self, response, product):
         item_url = urljoin(response.url, product.css('::attr(href)').get(''))
         categories = response.meta.get('categories', [])
@@ -84,14 +112,34 @@ class RiverSpider(Spider):
             currency=response.meta.get('currency', '')
         )
 
+    def parse_detail(self, response):
+        item = response.meta.get('item')
+        item['title'] = response.css(
+            '.product-details__title__H5_jQ::text').get()
+        item['base_sku'] = self.md5_hash(
+            item['title'].replace(item['color'], ''))
+        item['identifier'] = item['url'].split('-')[-1]
+        item['price'] = response.css('.price__current-price::text').get()
+        item['sizes'] = self.extract_size(response)
+        item['url'] = response.url
+        item['image_urls'] = response.css(
+            '.carousel__image__BIe5r::attr(src)').getall()
+        return item
+
+    def extract_size(self, response):
+        size_selector = '.product-details__size-select__ToWGJ li span.size-select__size__tusCt::text, .size-box__inner__Qz8SP::text'
+        return response.css(size_selector).getall()
+
     def get_last_page(self, page_num_txt):
         numbers = self.PAGE_NUM_REGEX.findall(page_num_txt)
-        if numbers:
-            total_pages = int(numbers[0])
-            return (total_pages + 59) // 60
-        return None
+        return (int(numbers[0]) + 59) // 60 if numbers else None
 
     def parse_category(self, level):
         cat_txt = level.css('a::text').get().strip()
         cat_url = level.css('a::attr(href)').get()
         return cat_txt, cat_url
+
+    @staticmethod
+    def md5_hash(s, truncate=16):
+        md5 = hashlib.md5(s.encode('utf-8')).hexdigest().upper()
+        return md5[:truncate]
